@@ -474,7 +474,7 @@ async function submitOrderWithPayment(paymentMethod) {
 
     // Save order to database
     try {
-        await fetch(`${API_URL}/api/orders`, {
+        await fetch(`${API_URL}/api/orders.php`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -484,7 +484,7 @@ async function submitOrderWithPayment(paymentMethod) {
                 total: total,
                 order_type: orderMode,
                 payment_method: paymentMethod,
-                order_number_override: orderNumber
+                status: 'done'
             })
         });
     } catch (e) {
@@ -599,9 +599,9 @@ function printCurrentOrder() {
 // ===== WEB ORDERS =====
 async function loadWebOrders() {
     try {
-        const res = await fetch(`${API_URL}/api/orders`);
+        const res = await fetch(`${API_URL}/api/orders.php?status=pending`);
         const orders = await res.json();
-        webOrders = orders.filter(o => o.status === 'pending' || o.status === 'preparing');
+        webOrders = Array.isArray(orders) ? orders : [];
         renderWebOrders();
     } catch (e) {
         console.error('Error loading orders:', e);
@@ -736,8 +736,8 @@ async function markWebOrderDone(orderId) {
 
     pendingCallback = async (paymentMethod) => {
         try {
-            await fetch(`${API_URL}/api/orders/${orderId}`, {
-                method: 'PATCH',
+            await fetch(`${API_URL}/api/orders.php?id=${orderId}`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'done', payment_method: paymentMethod })
             });
@@ -751,43 +751,45 @@ async function markWebOrderDone(orderId) {
     DOM.paymentModal.classList.add('active');
 }
 
-// ===== SSE CONNECTION =====
-function connectSSE() {
-    eventSource = new EventSource(`${API_URL}/api/orders/stream`);
+// ===== POLLING CONNECTION (PHP Compatible) =====
+let lastEventId = 0;
+let pollInterval = null;
 
-    eventSource.onopen = () => {
+function connectSSE() {
+    // Use polling instead of SSE for PHP compatibility
+    DOM.statusDot.classList.add('connected');
+    DOM.statusText.textContent = 'Connecté';
+
+    // Poll every 3 seconds for new orders
+    pollInterval = setInterval(pollForUpdates, 3000);
+    pollForUpdates(); // Initial poll
+}
+
+async function pollForUpdates() {
+    try {
+        const res = await fetch(`${API_URL}/api/events.php?poll=1&since=${lastEventId}`);
+        const data = await res.json();
+
+        if (data.events && data.events.length > 0) {
+            data.events.forEach(event => {
+                if (event.type === 'new_order') {
+                    // Reload web orders when new order arrives
+                    loadWebOrders();
+                    playNotification();
+                }
+                if (event.type === 'order_updated') {
+                    loadWebOrders();
+                }
+            });
+            lastEventId = data.lastId;
+        }
+
         DOM.statusDot.classList.add('connected');
         DOM.statusText.textContent = 'Connecté';
-    };
-
-    eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-
-        if (data.type === 'new_order') {
-            // Only add if it's a web order (not from this POS)
-            if (data.order.customer_name !== 'Sur place' && data.order.customer_name !== 'À emporter') {
-                webOrders.unshift(data.order);
-                renderWebOrders();
-                playNotification();
-
-                // Auto-print web orders
-                setTimeout(() => printWebOrder(data.order.id), 500);
-            }
-        }
-
-        if (data.type === 'order_updated' || data.type === 'order_deleted') {
-            loadWebOrders();
-        }
-    };
-
-    eventSource.onerror = () => {
+    } catch (e) {
         DOM.statusDot.classList.remove('connected');
         DOM.statusText.textContent = 'Déconnecté';
-        setTimeout(() => {
-            eventSource.close();
-            connectSSE();
-        }, 3000);
-    };
+    }
 }
 
 function playNotification() {

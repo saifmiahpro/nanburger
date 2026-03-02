@@ -1,0 +1,68 @@
+# NAN BURGER - Configuration Apache
+# Ce fichier configure le serveur pour le bon fonctionnement de l'application
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Force HTTPS (décommentez en production)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Set default charset
+AddDefaultCharset UTF-8
+
+# CORS Headers for API
+<IfModule mod_headers.c>
+    # Allow cross-origin requests
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+
+    # Cache static assets
+    <FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2)$">
+        Header set Cache-Control "max-age=31536000, public"
+    </FilesMatch>
+
+    # No cache for HTML and PHP
+    <FilesMatch "\.(html|php)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Protect sensitive files
+<FilesMatch "(^\.htaccess|^\.env|config\.php)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Default index files
+DirectoryIndex index.html index.php
+
+# Error pages (optionnel)
+ErrorDocument 404 /index.html
+ErrorDocument 500 /index.html
+
+# Prevent directory listing
+Options -Indexes
+
+# PHP settings (if allowed by hosting)
+<IfModule mod_php.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 60
+    php_flag display_errors Off
+</IfModule>

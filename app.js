@@ -747,7 +747,7 @@ checkoutDOM.form.addEventListener('submit', async (e) => {
     checkoutDOM.confirmBtn.innerHTML = '<span>Envoi en cours...</span>';
 
     try {
-        const response = await fetch('/api/orders', {
+        const response = await fetch('/api/orders.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

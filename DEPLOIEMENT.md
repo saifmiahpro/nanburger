@@ -1,226 +1,128 @@
-# Guide de Déploiement NAN BURGER - OVH VPS
+# Guide de Déploiement NAN BURGER sur Hostinger
 
-## 1. Commander le VPS chez OVH
+## Étape 1 : Créer la Base de Données MySQL
 
-1. Aller sur https://www.ovhcloud.com/fr/vps/
-2. Choisir **VPS Starter** (~4.20€ TTC/mois)
-3. Sélectionner:
-   - Localisation: **France (Gravelines ou Roubaix)**
-   - OS: **Ubuntu 22.04**
-4. Payer avec la carte du client
-5. Attendre l'email avec les identifiants SSH (IP + mot de passe root)
+1. Connectez-vous à **hPanel Hostinger**
+2. Allez dans **Bases de données** > **MySQL**
+3. Créez une nouvelle base de données :
+   - **Nom de la BDD** : `nanburger` (sera préfixé automatiquement)
+   - **Utilisateur** : `admin` (sera préfixé automatiquement)
+   - **Mot de passe** : Choisissez un mot de passe sécurisé
 
-## 2. Commander le nom de domaine
+4. **Notez les informations** qui vous sont données :
+   - Nom complet de la BDD : `u123456789_nanburger`
+   - Utilisateur : `u123456789_admin`
+   - Mot de passe : votre mot de passe
+   - Hôte : `localhost`
 
-1. Aller sur https://www.ovh.com/fr/domaines/
-2. Rechercher le domaine souhaité (ex: `nanburger.fr`)
-3. Commander (~7€/an pour un .fr)
+## Étape 2 : Configurer le fichier config.php
 
-## 3. Se connecter au VPS
+Ouvrez le fichier `api/config.php` et modifiez ces lignes avec vos infos :
 
-```bash
-# Depuis un terminal (Mac/Linux) ou PowerShell (Windows)
-ssh root@IP_DU_VPS
-# Entrer le mot de passe reçu par email
+```php
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'u123456789_nanburger');  // Votre nom de BDD
+define('DB_USER', 'u123456789_admin');       // Votre utilisateur
+define('DB_PASS', 'VotreMotDePasse123!');    // Votre mot de passe
 ```
 
-## 4. Installer Node.js sur le VPS
+## Étape 3 : Déployer les fichiers
 
+### Option A : Via Git (Recommandé)
 ```bash
-# Mettre à jour le système
-apt update && apt upgrade -y
+git add .
+git commit -m "PHP backend ready for Hostinger"
+git push origin main
+```
+Puis dans hPanel > Git, cliquez sur "Deploy".
 
-# Installer Node.js 20
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt install -y nodejs
+### Option B : Via File Manager
+1. Dans hPanel, allez dans **File Manager**
+2. Naviguez vers `public_html`
+3. Uploadez tous les fichiers du projet
 
-# Vérifier l'installation
-node --version  # doit afficher v20.x.x
-npm --version
+## Étape 4 : Initialiser la Base de Données
 
-# Installer PM2 (gestionnaire de processus)
-npm install -g pm2
+Après le déploiement, visitez cette URL **UNE SEULE FOIS** :
 
-# Installer les dépendances pour better-sqlite3
-apt install -y build-essential python3
+```
+https://votre-domaine.com/api/init.php
 ```
 
-## 5. Transférer les fichiers
-
-### Option A: Avec Git (recommandé)
-```bash
-# Sur le VPS
-cd /var/www
-git clone https://github.com/TON_REPO/nanburger.git
-cd nanburger
-```
-
-### Option B: Avec SCP (copie directe)
-```bash
-# Depuis ton Mac (pas sur le VPS)
-scp -r /Users/saif/NanBurger root@IP_DU_VPS:/var/www/nanburger
-```
-
-## 6. Installer les dépendances et lancer
-
-```bash
-# Sur le VPS
-cd /var/www/nanburger
-
-# Installer les dépendances
-npm install
-
-# Tester que ça marche
-node server.js
-# Tu dois voir "NAN BURGER - Serveur démarré!"
-# Ctrl+C pour arrêter
-
-# Lancer avec PM2 (reste actif même si tu te déconnectes)
-pm2 start server.js --name nanburger
-
-# Configurer PM2 pour redémarrer au reboot
-pm2 startup
-pm2 save
-```
-
-## 7. Configurer Nginx (reverse proxy)
-
-```bash
-# Installer Nginx
-apt install -y nginx
-
-# Créer la config
-nano /etc/nginx/sites-available/nanburger
-```
-
-Coller cette configuration:
-```nginx
-server {
-    listen 80;
-    server_name nanburger.fr www.nanburger.fr;  # Remplacer par ton domaine
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_cache_bypass $http_upgrade;
-
-        # Pour SSE (temps réel)
-        proxy_set_header Connection '';
-        proxy_buffering off;
-        proxy_read_timeout 86400s;
-    }
+Vous devriez voir :
+```json
+{
+  "success": true,
+  "message": "Base de données initialisée avec succès!",
+  "tables": ["orders", "sse_events"]
 }
 ```
 
-Sauvegarder: `Ctrl+O`, `Enter`, `Ctrl+X`
+## Étape 5 : Vérifier le Fonctionnement
 
-```bash
-# Activer le site
-ln -s /etc/nginx/sites-available/nanburger /etc/nginx/sites-enabled/
+1. **Page d'accueil client** : `https://votre-domaine.com/`
+2. **Caisse POS** : `https://votre-domaine.com/caisse.html`
+3. **API Health Check** : `https://votre-domaine.com/api/health.php`
 
-# Tester la config
-nginx -t
+## Étape 6 : Sécurité (IMPORTANT!)
 
-# Redémarrer Nginx
-systemctl restart nginx
+### Changer le code PIN de la caisse
+Dans `caisse.html`, ligne 188, changez :
+```javascript
+const CORRECT_PIN = '1234';  // Changez ce code!
 ```
 
-## 8. Configurer le DNS (chez OVH)
-
-1. Aller dans l'espace client OVH > Domaines > nanburger.fr
-2. Onglet "Zone DNS"
-3. Ajouter/modifier l'entrée:
-   - Type: **A**
-   - Sous-domaine: *(vide pour nanburger.fr)*
-   - Cible: **IP_DU_VPS**
-   - TTL: 3600
-
-4. Ajouter aussi pour www:
-   - Type: **A**
-   - Sous-domaine: **www**
-   - Cible: **IP_DU_VPS**
-   - TTL: 3600
-
-⚠️ La propagation DNS peut prendre 5-30 minutes.
-
-## 9. Ajouter HTTPS (Let's Encrypt)
-
-```bash
-# Installer Certbot
-apt install -y certbot python3-certbot-nginx
-
-# Obtenir le certificat SSL
-certbot --nginx -d nanburger.fr -d www.nanburger.fr
-
-# Suivre les instructions (entrer email, accepter les conditions)
-# Choisir "2" pour rediriger HTTP vers HTTPS
-
-# Le certificat se renouvellera automatiquement
+### Désactiver le mode debug
+Dans `api/config.php`, assurez-vous que :
+```php
+define('DEBUG_MODE', false);
 ```
 
-## 10. Tester!
-
-- Site client: https://nanburger.fr
-- Dashboard cuisine: https://nanburger.fr/admin
-
----
-
-## Commandes utiles
-
-```bash
-# Voir les logs
-pm2 logs nanburger
-
-# Redémarrer l'application
-pm2 restart nanburger
-
-# Voir le statut
-pm2 status
-
-# Voir l'utilisation ressources
-pm2 monit
+### Activer HTTPS
+Dans `.htaccess`, décommentez ces lignes :
+```apache
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 ```
 
-## Configuration imprimante thermique (tablette Windows 10)
+## Structure des Fichiers
 
-1. Brancher l'imprimante Epson en USB
-2. Windows devrait installer les drivers automatiquement
-3. Aller dans **Paramètres > Imprimantes**
-4. Définir l'imprimante Epson comme **imprimante par défaut**
-5. Dans les propriétés de l'imprimante:
-   - Format papier: **80mm** ou **Receipt 80mm**
-   - Marges: **Minimales**
-6. Ouvrir https://nanburger.fr/admin dans Chrome
-7. Cliquer sur l'icône 🖨️ d'une commande
-8. Dans la fenêtre d'impression, vérifier que c'est la bonne imprimante et imprimer
+```
+public_html/
+├── index.html          # Page client (commandes web)
+├── caisse.html         # Interface caisse POS
+├── rapport.html        # Rapports journaliers
+├── app.js              # JS client
+├── caisse.js           # JS caisse
+├── style.css           # CSS client
+├── caisse.css          # CSS caisse
+├── logo.png            # Logo
+├── .htaccess           # Config Apache
+└── api/
+    ├── config.php      # Configuration BDD
+    ├── init.php        # Initialisation BDD (une fois)
+    ├── orders.php      # API commandes
+    ├── events.php      # Polling temps réel
+    └── health.php      # Health check
+```
 
 ## Dépannage
 
-### Le site ne charge pas
-```bash
-# Vérifier que Node tourne
-pm2 status
+### Erreur "Database connection failed"
+- Vérifiez les identifiants dans `api/config.php`
+- L'hôte doit être `localhost` sur Hostinger
 
-# Vérifier Nginx
-systemctl status nginx
+### Erreur 500
+- Vérifiez les permissions des fichiers (644 pour fichiers, 755 pour dossiers)
+- Activez `DEBUG_MODE` temporairement pour voir l'erreur
 
-# Voir les erreurs
-pm2 logs nanburger --err
-```
+### Les commandes web n'apparaissent pas
+- Vérifiez que la table `sse_events` existe
+- Rafraîchissez la page caisse
 
-### Les commandes n'arrivent pas en temps réel
-- Vérifier que le navigateur du dashboard est bien connecté (point vert)
-- Actualiser la page admin
-- Vérifier les logs: `pm2 logs nanburger`
+## Contact Support
 
-### Erreur "Cannot find module"
-```bash
-cd /var/www/nanburger
-rm -rf node_modules
-npm install
-pm2 restart nanburger
-```
+Si problème, contactez le support Hostinger avec ces infos :
+- Plan : Business Web Hosting
+- Technologie : PHP 8.x + MySQL
+- Framework : Aucun (PHP natif)
