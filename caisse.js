@@ -564,7 +564,7 @@ function printTicket(orderNum, items, total, mode, paymentMethod) {
         * { font-weight: bold !important; }
         body {
             font-family: 'Courier New', monospace;
-            font-size: 16px;
+            font-size: 20px;
             width: 72mm;
             margin: 0;
             padding: 8px;
@@ -573,15 +573,15 @@ function printTicket(orderNum, items, total, mode, paymentMethod) {
             font-weight: bold;
         }
         .header { text-align: center; border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
-        h1 { font-size: 28px; margin: 0 0 5px 0; }
-        .info { font-size: 14px; margin: 4px 0; }
-        .mode { display: inline-block; border: 2px solid black; padding: 6px 12px; margin: 8px 0; font-size: 18px; }
-        .order-num { text-align: center; font-size: 48px; border: 3px solid black; padding: 12px; margin: 12px 0; }
+        h1 { font-size: 32px; margin: 0 0 5px 0; }
+        .info { font-size: 18px; margin: 5px 0; }
+        .mode { display: inline-block; border: 2px solid black; padding: 8px 14px; margin: 8px 0; font-size: 22px; }
+        .order-num { text-align: center; font-size: 56px; border: 3px solid black; padding: 14px; margin: 14px 0; }
         table { width: 100%; border-collapse: collapse; }
-        td { padding: 6px 2px; font-size: 16px; }
-        .total { border-top: 3px solid black; padding-top: 12px; margin-top: 12px; font-size: 24px; display: flex; justify-content: space-between; }
-        .tva { text-align: center; font-size: 14px; margin-top: 10px; }
-        .footer { text-align: center; border-top: 2px dashed black; padding-top: 10px; margin-top: 12px; font-size: 14px; }
+        td { padding: 8px 2px; font-size: 20px; }
+        .total { border-top: 3px solid black; padding-top: 14px; margin-top: 14px; font-size: 28px; display: flex; justify-content: space-between; }
+        .tva { text-align: center; font-size: 18px; margin-top: 12px; }
+        .footer { text-align: center; border-top: 2px dashed black; padding-top: 12px; margin-top: 14px; font-size: 18px; }
         @page { size: 80mm auto; margin: 0; }
     </style>
 </head>
@@ -739,7 +739,7 @@ async function printWebOrder(orderId) {
         * { font-weight: bold !important; }
         body {
             font-family: 'Courier New', monospace;
-            font-size: 16px;
+            font-size: 20px;
             width: 72mm;
             margin: 0;
             padding: 8px;
@@ -748,17 +748,17 @@ async function printWebOrder(orderId) {
             font-weight: bold;
         }
         .header { text-align: center; border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
-        h1 { font-size: 28px; margin: 0 0 5px 0; }
-        .info { font-size: 14px; margin: 4px 0; }
-        .mode { display: inline-block; background: black; color: white; padding: 6px 12px; margin: 8px 0; font-size: 18px; }
-        .order-num { text-align: center; font-size: 48px; border: 3px solid black; padding: 12px; margin: 12px 0; }
-        .customer { background: #ddd; padding: 10px; margin: 10px 0; font-size: 18px; text-align: center; }
+        h1 { font-size: 32px; margin: 0 0 5px 0; }
+        .info { font-size: 18px; margin: 5px 0; }
+        .mode { display: inline-block; background: black; color: white; padding: 8px 14px; margin: 8px 0; font-size: 22px; }
+        .order-num { text-align: center; font-size: 56px; border: 3px solid black; padding: 14px; margin: 14px 0; }
+        .customer { background: #ddd; padding: 12px; margin: 12px 0; font-size: 22px; text-align: center; }
         table { width: 100%; border-collapse: collapse; }
-        td { padding: 6px 2px; font-size: 16px; }
-        .total { border-top: 3px solid black; padding-top: 12px; margin-top: 12px; font-size: 24px; display: flex; justify-content: space-between; }
-        .tva { text-align: center; font-size: 14px; margin-top: 10px; }
-        .footer { text-align: center; border-top: 2px dashed black; padding-top: 10px; margin-top: 12px; font-size: 14px; }
-        .pickup { background: #000; color: white; padding: 10px; margin: 10px 0; text-align: center; font-size: 20px; }
+        td { padding: 8px 2px; font-size: 20px; }
+        .total { border-top: 3px solid black; padding-top: 14px; margin-top: 14px; font-size: 28px; display: flex; justify-content: space-between; }
+        .tva { text-align: center; font-size: 18px; margin-top: 12px; }
+        .footer { text-align: center; border-top: 2px dashed black; padding-top: 12px; margin-top: 14px; font-size: 18px; }
+        .pickup { background: #000; color: white; padding: 12px; margin: 12px 0; text-align: center; font-size: 24px; }
         @page { size: 80mm auto; margin: 0; }
     </style>
 </head>
