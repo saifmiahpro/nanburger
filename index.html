@@ -292,6 +292,12 @@
                         <label for="customerPhone">Téléphone (optionnel)</label>
                         <input type="tel" id="customerPhone" placeholder="Ex: 06 12 34 56 78">
                     </div>
+                    <div class="form-group">
+                        <label for="pickupTime">Heure de récupération *</label>
+                        <select id="pickupTime" required>
+                            <option value="">Choisir une heure</option>
+                        </select>
+                    </div>
                     <div class="checkout-summary">
                         <div class="summary-row">
                             <span>Total à payer</span>
@@ -306,7 +312,8 @@
                     <div class="success-icon">✅</div>
                     <h3>Commande envoyée!</h3>
                     <p class="success-order-num" id="successOrderNum">NB-001</p>
-                    <p>Votre commande est en cours de préparation.<br>Vous serez appelé quand elle sera prête!</p>
+                    <p class="success-pickup-time" id="successPickupTime"></p>
+                    <p>Votre commande sera prête à l'heure indiquée.<br>Présentez-vous au comptoir!</p>
                     <button class="close-success-btn" id="closeSuccessBtn">Fermer</button>
                 </div>
             </div>

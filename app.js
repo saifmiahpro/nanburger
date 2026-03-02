@@ -690,6 +690,7 @@ const checkoutDOM = {
     form: document.getElementById('checkoutForm'),
     customerName: document.getElementById('customerName'),
     customerPhone: document.getElementById('customerPhone'),
+    pickupTime: document.getElementById('pickupTime'),
     total: document.getElementById('checkoutTotal'),
     confirmBtn: document.getElementById('confirmOrderBtn'),
     success: document.getElementById('checkoutSuccess'),
@@ -704,9 +705,68 @@ function openCheckoutModal() {
     checkoutDOM.success.classList.remove('show');
     checkoutDOM.customerName.value = '';
     checkoutDOM.customerPhone.value = '';
+
+    // Generate pickup time slots
+    generatePickupTimeSlots();
+
     checkoutDOM.backdrop.classList.add('active');
     document.body.style.overflow = 'hidden';
     setTimeout(() => checkoutDOM.customerName.focus(), 300);
+}
+
+function generatePickupTimeSlots() {
+    const select = checkoutDOM.pickupTime;
+    select.innerHTML = '<option value="">Choisir une heure</option>';
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinutes = now.getMinutes();
+
+    // Restaurant hours (11h-23h en semaine, 11h-00h ven/sam, 12h-22h dim)
+    const day = now.getDay();
+    let openHour = day === 0 ? 12 : 11; // Dimanche ouvre à 12h
+    let closeHour = (day === 5 || day === 6) ? 24 : (day === 0 ? 22 : 23);
+
+    // Start from current time + 20 min (prep time), rounded to next 15 min
+    let startMinutes = currentMinutes + 20;
+    let startHour = currentHour;
+
+    if (startMinutes >= 60) {
+        startHour++;
+        startMinutes -= 60;
+    }
+
+    // Round to next 15 min slot
+    startMinutes = Math.ceil(startMinutes / 15) * 15;
+    if (startMinutes >= 60) {
+        startHour++;
+        startMinutes = 0;
+    }
+
+    // If before opening, start at opening time
+    if (startHour < openHour) {
+        startHour = openHour;
+        startMinutes = 0;
+    }
+
+    // Generate slots until closing
+    for (let h = startHour; h < closeHour; h++) {
+        for (let m = (h === startHour ? startMinutes : 0); m < 60; m += 15) {
+            const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            const option = document.createElement('option');
+            option.value = timeStr;
+            option.textContent = timeStr;
+            select.appendChild(option);
+        }
+    }
+
+    // Add "Dès que possible" as first option after placeholder
+    if (select.options.length > 1) {
+        const asap = document.createElement('option');
+        asap.value = 'asap';
+        asap.textContent = '⚡ Dès que possible (~20 min)';
+        select.insertBefore(asap, select.options[1]);
+    }
 }
 
 function closeCheckoutModal() {
@@ -729,6 +789,7 @@ checkoutDOM.form.addEventListener('submit', async (e) => {
 
     const customerName = checkoutDOM.customerName.value.trim();
     const customerPhone = checkoutDOM.customerPhone.value.trim();
+    const pickupTime = checkoutDOM.pickupTime.value;
     const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
 
     // Préparer les items pour l'API
@@ -755,6 +816,7 @@ checkoutDOM.form.addEventListener('submit', async (e) => {
             body: JSON.stringify({
                 customer_name: customerName,
                 customer_phone: customerPhone,
+                pickup_time: pickupTime === 'asap' ? 'Dès que possible' : pickupTime,
                 items: items,
                 total: total
             })
@@ -766,6 +828,15 @@ checkoutDOM.form.addEventListener('submit', async (e) => {
             // Afficher le succès
             checkoutDOM.form.classList.add('hidden');
             checkoutDOM.orderNum.textContent = data.order_number;
+
+            // Afficher l'heure de récupération
+            const pickupDisplay = document.getElementById('successPickupTime');
+            if (pickupTime === 'asap') {
+                pickupDisplay.innerHTML = '⏰ <strong>Dès que possible</strong> (~20 min)';
+            } else {
+                pickupDisplay.innerHTML = `⏰ Récupération à <strong>${pickupTime}</strong>`;
+            }
+
             checkoutDOM.success.classList.add('show');
 
             // Vider le panier
