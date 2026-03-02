@@ -727,24 +727,29 @@ function generatePickupTimeSlots() {
     let openHour = day === 0 ? 12 : 11; // Dimanche ouvre à 12h
     let closeHour = (day === 5 || day === 6) ? 24 : (day === 0 ? 22 : 23);
 
-    // Start from current time + 20 min (prep time), rounded to next 15 min
-    let startMinutes = currentMinutes + 20;
-    let startHour = currentHour;
+    // Check if restaurant is currently open
+    const isOpen = currentHour >= openHour && currentHour < closeHour;
 
-    if (startMinutes >= 60) {
-        startHour++;
-        startMinutes -= 60;
-    }
+    let startHour, startMinutes;
 
-    // Round to next 15 min slot
-    startMinutes = Math.ceil(startMinutes / 15) * 15;
-    if (startMinutes >= 60) {
-        startHour++;
-        startMinutes = 0;
-    }
+    if (isOpen) {
+        // Restaurant is open - start from current time + 20 min
+        startMinutes = currentMinutes + 20;
+        startHour = currentHour;
 
-    // If before opening, start at opening time
-    if (startHour < openHour) {
+        if (startMinutes >= 60) {
+            startHour++;
+            startMinutes -= 60;
+        }
+
+        // Round to next 15 min slot
+        startMinutes = Math.ceil(startMinutes / 15) * 15;
+        if (startMinutes >= 60) {
+            startHour++;
+            startMinutes = 0;
+        }
+    } else {
+        // Restaurant is closed - show slots starting from opening time
         startHour = openHour;
         startMinutes = 0;
     }
@@ -760,12 +765,21 @@ function generatePickupTimeSlots() {
         }
     }
 
-    // Add "Dès que possible" as first option after placeholder
-    if (select.options.length > 1) {
+    // Add "Dès que possible" as first option (only if restaurant is open)
+    if (isOpen) {
         const asap = document.createElement('option');
         asap.value = 'asap';
         asap.textContent = '⚡ Dès que possible (~20 min)';
         select.insertBefore(asap, select.options[1]);
+    }
+
+    // If no slots available (shouldn't happen), add a message
+    if (select.options.length === 1) {
+        const noSlot = document.createElement('option');
+        noSlot.value = '';
+        noSlot.textContent = 'Aucun créneau disponible';
+        noSlot.disabled = true;
+        select.appendChild(noSlot);
     }
 }
 
