@@ -540,54 +540,106 @@ function printTicket(orderNum, items, total, mode, paymentMethod) {
     const tvaAmount = total - totalHT;
 
     const itemsHtml = items.map(item => {
-        const optStr = Object.values(item.options).filter(v => v).join(', ');
+        const optStr = Object.values(item.options || {}).filter(v => v).join(', ');
         return `
-            <div class="print-item">
-                <span>${item.qty}x ${item.name}</span>
-                <span>${(item.price * item.qty).toFixed(2)} €</span>
-            </div>
-            <div class="print-item-details">${item.format === 'menu' ? 'Menu' : 'Seul'}${optStr ? ' - ' + optStr : ''}</div>
+            <tr>
+                <td style="text-align:left;">${item.qty}x ${item.name}</td>
+                <td style="text-align:right;">${(item.price * item.qty).toFixed(2)}€</td>
+            </tr>
+            <tr>
+                <td colspan="2" style="font-size:10px;color:#555;padding-left:10px;">${item.format === 'menu' ? 'Menu' : 'Seul'}${optStr ? ' - ' + optStr : ''}</td>
+            </tr>
         `;
     }).join('');
 
-    DOM.printArea.innerHTML = `
-        <div class="print-header">
-            <h1>NAN.BURGER</h1>
-            <p style="font-size: 11px;">100% HALAL</p>
-            <p style="font-size: 9px; margin-top: 4px;">
-                CC L'Orée du Village<br>
-                1 Avenue de Toulouse<br>
-                31620 Castelnau-d'Estrétefonds
-            </p>
-            <p style="font-size: 9px; margin-top: 4px;">SIRET: 995 176 310 00010</p>
-            <p style="margin-top: 8px;">${date} - ${time}</p>
-            <div class="print-mode">${mode === 'surplace' ? '🍽️ SUR PLACE' : '🥡 À EMPORTER'}</div>
-            ${paymentMethod ? `<div class="print-mode" style="margin-top:5px; font-size:14px;">Paiement : ${paymentMethod}</div>` : ''}
-        </div>
+    // Créer une fenêtre popup pour l'impression
+    const printWindow = window.open('', 'PRINT', 'width=300,height=600');
 
-        <div class="print-order-num">${orderNum}</div>
+    printWindow.document.write(`
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ticket ${orderNum}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            width: 72mm;
+            padding: 5mm;
+            background: white;
+            color: black;
+        }
+        .header { text-align: center; border-bottom: 1px dashed black; padding-bottom: 8px; margin-bottom: 8px; }
+        .header h1 { font-size: 20px; margin-bottom: 4px; }
+        .header p { font-size: 10px; margin: 2px 0; }
+        .mode { display: inline-block; border: 1px solid black; padding: 4px 8px; margin: 8px 0; font-weight: bold; font-size: 14px; }
+        .order-num { text-align: center; font-size: 32px; font-weight: bold; border: 2px solid black; padding: 8px; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+        td { padding: 3px 0; font-size: 12px; }
+        .total { border-top: 2px solid black; padding-top: 8px; margin-top: 8px; font-size: 16px; font-weight: bold; display: flex; justify-content: space-between; }
+        .tva { text-align: center; font-size: 9px; border-top: 1px dashed black; padding-top: 6px; margin-top: 6px; }
+        .footer { text-align: center; border-top: 1px dashed black; padding-top: 8px; margin-top: 8px; font-size: 10px; }
+        .end { text-align: center; margin-top: 15px; padding-top: 10px; }
+        @media print {
+            @page { size: 80mm auto; margin: 0; }
+            body { width: 72mm; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>NAN.BURGER</h1>
+        <p>100% HALAL</p>
+        <p>CC L'Orée du Village</p>
+        <p>1 Avenue de Toulouse</p>
+        <p>31620 Castelnau-d'Estrétefonds</p>
+        <p>SIRET: 995 176 310 00010</p>
+        <p style="margin-top:6px;">${date} - ${time}</p>
+        <div class="mode">${mode === 'surplace' ? 'SUR PLACE' : 'A EMPORTER'}</div>
+        ${paymentMethod ? `<div class="mode" style="font-size:12px;">${paymentMethod}</div>` : ''}
+    </div>
 
-        <div class="print-items">
-            ${itemsHtml}
-        </div>
+    <div class="order-num">${orderNum}</div>
 
-        <div class="print-total">
-            <span>TOTAL TTC</span>
-            <span>${total.toFixed(2)} €</span>
-        </div>
+    <table>${itemsHtml}</table>
 
-        <div class="print-tva" style="text-align: center; font-size: 10px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed black;">
-            HT: ${totalHT.toFixed(2)} € | TVA (${tvaRate}%): ${tvaAmount.toFixed(2)} €
-        </div>
+    <div class="total">
+        <span>TOTAL TTC</span>
+        <span>${total.toFixed(2)} €</span>
+    </div>
 
-        <div class="print-footer">
-            <p>Merci de votre visite!</p>
-            <p>À bientôt chez NAN.BURGER</p>
-            <p style="font-size: 8px; margin-top: 5px;">SAS au capital de 500€</p>
-        </div>
-    `;
+    <div class="tva">
+        HT: ${totalHT.toFixed(2)}€ | TVA ${tvaRate}%: ${tvaAmount.toFixed(2)}€
+    </div>
 
-    window.print();
+    <div class="footer">
+        <p>Merci de votre visite!</p>
+        <p>A bientot chez NAN.BURGER</p>
+    </div>
+
+    <div class="end">- - - - - - - - - -</div>
+</body>
+</html>
+    `);
+
+    printWindow.document.close();
+
+    // Attendre que le contenu soit chargé puis imprimer
+    printWindow.onload = function() {
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+    };
+
+    // Fallback si onload ne se déclenche pas
+    setTimeout(() => {
+        if (!printWindow.closed) {
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+        }
+    }, 500);
 }
 
 function printCurrentOrder() {
