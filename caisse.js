@@ -553,7 +553,7 @@ function printTicket(orderNum, items, total, mode, paymentMethod) {
     }).join('');
 
     // Créer une fenêtre popup pour l'impression
-    const printWindow = window.open('', 'PRINT', 'width=300,height=600');
+    const printWindow = window.open('', 'PRINT', 'width=400,height=600');
 
     printWindow.document.write(`
 <!DOCTYPE html>
@@ -561,43 +561,39 @@ function printTicket(orderNum, items, total, mode, paymentMethod) {
 <head>
     <title>Ticket ${orderNum}</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Courier New', monospace;
-            font-size: 12px;
+            font-size: 14px;
             width: 72mm;
-            padding: 5mm;
+            margin: 0;
+            padding: 8px;
             background: white;
             color: black;
         }
-        .header { text-align: center; border-bottom: 1px dashed black; padding-bottom: 8px; margin-bottom: 8px; }
-        .header h1 { font-size: 20px; margin-bottom: 4px; }
-        .header p { font-size: 10px; margin: 2px 0; }
-        .mode { display: inline-block; border: 1px solid black; padding: 4px 8px; margin: 8px 0; font-weight: bold; font-size: 14px; }
-        .order-num { text-align: center; font-size: 32px; font-weight: bold; border: 2px solid black; padding: 8px; margin: 10px 0; }
-        table { width: 100%; border-collapse: collapse; margin: 8px 0; }
-        td { padding: 3px 0; font-size: 12px; }
-        .total { border-top: 2px solid black; padding-top: 8px; margin-top: 8px; font-size: 16px; font-weight: bold; display: flex; justify-content: space-between; }
-        .tva { text-align: center; font-size: 9px; border-top: 1px dashed black; padding-top: 6px; margin-top: 6px; }
-        .footer { text-align: center; border-top: 1px dashed black; padding-top: 8px; margin-top: 8px; font-size: 10px; }
-        .end { text-align: center; margin-top: 15px; padding-top: 10px; }
-        @media print {
-            @page { size: 80mm auto; margin: 0; }
-            body { width: 72mm; }
-        }
+        .header { text-align: center; border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
+        h1 { font-size: 24px; margin: 0 0 5px 0; }
+        .info { font-size: 12px; margin: 3px 0; }
+        .mode { display: inline-block; border: 2px solid black; padding: 5px 10px; margin: 8px 0; font-weight: bold; font-size: 16px; }
+        .order-num { text-align: center; font-size: 40px; font-weight: bold; border: 3px solid black; padding: 10px; margin: 12px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 5px 2px; font-size: 14px; font-weight: bold; }
+        .detail { font-size: 11px; font-weight: normal; }
+        .total { border-top: 3px solid black; padding-top: 10px; margin-top: 10px; font-size: 22px; font-weight: bold; display: flex; justify-content: space-between; }
+        .tva { text-align: center; font-size: 11px; margin-top: 8px; }
+        .footer { text-align: center; border-top: 2px dashed black; padding-top: 10px; margin-top: 12px; font-size: 12px; }
+        @page { size: 80mm auto; margin: 0; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>NAN.BURGER</h1>
-        <p>100% HALAL</p>
-        <p>CC L'Orée du Village</p>
-        <p>1 Avenue de Toulouse</p>
-        <p>31620 Castelnau-d'Estrétefonds</p>
-        <p>SIRET: 995 176 310 00010</p>
-        <p style="margin-top:6px;">${date} - ${time}</p>
+        <div class="info">100% HALAL</div>
+        <div class="info">CC L'Oree du Village</div>
+        <div class="info">31620 Castelnau</div>
+        <div class="info">SIRET: 995 176 310 00010</div>
+        <div style="margin-top:8px;font-size:14px">${date} - ${time}</div>
         <div class="mode">${mode === 'surplace' ? 'SUR PLACE' : 'A EMPORTER'}</div>
-        ${paymentMethod ? `<div class="mode" style="font-size:12px;">${paymentMethod}</div>` : ''}
+        ${paymentMethod ? `<div class="mode">${paymentMethod}</div>` : ''}
     </div>
 
     <div class="order-num">${orderNum}</div>
@@ -605,20 +601,16 @@ function printTicket(orderNum, items, total, mode, paymentMethod) {
     <table>${itemsHtml}</table>
 
     <div class="total">
-        <span>TOTAL TTC</span>
+        <span>TOTAL</span>
         <span>${total.toFixed(2)} €</span>
     </div>
 
-    <div class="tva">
-        HT: ${totalHT.toFixed(2)}€ | TVA ${tvaRate}%: ${tvaAmount.toFixed(2)}€
-    </div>
+    <div class="tva">HT: ${totalHT.toFixed(2)}€ | TVA ${tvaRate}%: ${tvaAmount.toFixed(2)}€</div>
 
     <div class="footer">
         <p>Merci de votre visite!</p>
-        <p>A bientot chez NAN.BURGER</p>
+        <p style="margin-top:15px">- - - - - - - - - -</p>
     </div>
-
-    <div class="end">- - - - - - - - - -</div>
 </body>
 </html>
     `);
@@ -721,11 +713,11 @@ async function printWebOrder(orderId) {
     const itemsHtml = order.items.map(item => {
         const optStr = Object.values(item.options || {}).filter(v => v).join(', ');
         return `
-            <div class="print-item">
-                <span>${item.qty}x ${item.name}</span>
-                <span>${(item.price * item.qty).toFixed(2)} €</span>
-            </div>
-            <div class="print-item-details">${item.format === 'menu' ? 'Menu' : 'Seul'}${optStr ? ' - ' + optStr : ''}</div>
+            <tr>
+                <td>${item.qty}x ${item.name}</td>
+                <td style="text-align:right">${(item.price * item.qty).toFixed(2)}€</td>
+            </tr>
+            ${optStr ? `<tr><td colspan="2" style="font-size:11px;padding-left:8px">${item.format === 'menu' ? 'Menu' : 'Seul'} - ${optStr}</td></tr>` : ''}
         `;
     }).join('');
 
@@ -734,49 +726,82 @@ async function printWebOrder(orderId) {
     const totalHT = order.total / (1 + tvaRate / 100);
     const tvaAmount = order.total - totalHT;
 
-    DOM.printArea.innerHTML = `
-        <div class="print-header">
-            <h1>NAN.BURGER</h1>
-            <p style="font-size: 11px;">100% HALAL</p>
-            <p style="font-size: 9px; margin-top: 4px;">
-                CC L'Orée du Village<br>
-                1 Avenue de Toulouse<br>
-                31620 Castelnau-d'Estrétefonds
-            </p>
-            <p style="font-size: 9px; margin-top: 4px;">SIRET: 995 176 310 00010</p>
-            <p style="margin-top: 8px;">${date} - ${time}</p>
-            <div class="print-mode">🌐 COMMANDE WEB</div>
-            ${order.payment_method ? `<div class="print-mode" style="margin-top:5px; font-size:14px;">Paiement : ${order.payment_method}</div>` : ''}
+    // Utiliser fenêtre popup pour impression
+    const printWindow = window.open('', 'PRINT', 'width=400,height=600');
+
+    printWindow.document.write(`
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web ${order.order_number}</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            width: 72mm;
+            margin: 0;
+            padding: 8px;
+            background: white;
+            color: black;
+        }
+        .header { text-align: center; border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
+        h1 { font-size: 24px; margin: 0 0 5px 0; }
+        .mode { display: inline-block; background: black; color: white; padding: 5px 10px; margin: 8px 0; font-weight: bold; font-size: 16px; }
+        .order-num { text-align: center; font-size: 36px; font-weight: bold; border: 3px solid black; padding: 10px; margin: 12px 0; }
+        .customer { background: #eee; padding: 8px; margin: 10px 0; font-size: 16px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 5px 2px; font-size: 14px; }
+        .total { border-top: 3px solid black; padding-top: 10px; margin-top: 10px; font-size: 20px; font-weight: bold; display: flex; justify-content: space-between; }
+        .tva { text-align: center; font-size: 11px; margin-top: 8px; }
+        .footer { text-align: center; border-top: 2px dashed black; padding-top: 10px; margin-top: 12px; font-size: 12px; }
+        .pickup { background: #000; color: white; padding: 8px; margin: 10px 0; text-align: center; font-size: 16px; font-weight: bold; }
+        @page { size: 80mm auto; margin: 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>NAN.BURGER</h1>
+        <div>100% HALAL</div>
+        <div style="font-size:11px;margin-top:5px">
+            CC L'Oree du Village<br>
+            31620 Castelnau-d'Estretefonds
         </div>
+        <div style="margin-top:8px">${date} - ${time}</div>
+        <div class="mode">COMMANDE WEB</div>
+    </div>
 
-        <div class="print-order-num">${order.order_number}</div>
+    <div class="order-num">${order.order_number}</div>
 
-        <div class="print-customer">
-            <strong>${order.customer_name}</strong><br>
-            ${order.customer_phone ? `Tel: ${order.customer_phone}` : ''}
-        </div>
+    <div class="customer">
+        <strong>${order.customer_name}</strong>
+        ${order.customer_phone ? `<br>Tel: ${order.customer_phone}` : ''}
+    </div>
 
-        <div class="print-items">
-            ${itemsHtml}
-        </div>
+    ${order.pickup_time ? `<div class="pickup">RETRAIT: ${order.pickup_time}</div>` : ''}
 
-        <div class="print-total">
-            <span>TOTAL TTC</span>
-            <span>${order.total.toFixed(2)} €</span>
-        </div>
+    <table>${itemsHtml}</table>
 
-        <div class="print-tva" style="text-align: center; font-size: 10px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed black;">
-            HT: ${totalHT.toFixed(2)} € | TVA (${tvaRate}%): ${tvaAmount.toFixed(2)} €
-        </div>
+    <div class="total">
+        <span>TOTAL</span>
+        <span>${order.total.toFixed(2)} €</span>
+    </div>
 
-        <div class="print-footer">
-            <p>Merci de votre visite!</p>
-            <p>À bientôt chez NAN.BURGER</p>
-            <p style="font-size: 8px; margin-top: 5px;">SAS au capital de 500€</p>
-        </div>
-    `;
+    <div class="tva">HT: ${totalHT.toFixed(2)}€ | TVA ${tvaRate}%: ${tvaAmount.toFixed(2)}€</div>
 
-    window.print();
+    <div class="footer">
+        <p>Merci!</p>
+        <p style="margin-top:15px">- - - - - - - - - -</p>
+    </div>
+</body>
+</html>
+    `);
+
+    printWindow.document.close();
+    setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+    }, 300);
 }
 
 async function markWebOrderDone(orderId) {
