@@ -56,6 +56,11 @@ app.get('/rapport', (req, res) => {
     res.sendFile(path.join(__dirname, 'rapport.html'));
 });
 
+// Health check endpoint for deployment verification
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // === CLIENTS SSE (Server-Sent Events) ===
 let sseClients = [];
 
