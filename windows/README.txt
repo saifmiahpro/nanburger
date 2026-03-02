@@ -1,36 +1,34 @@
 ====================================================
-   NAN BURGER - Lanceur Dual Display Windows
+   NAN BURGER - Lanceur Dual Display
 ====================================================
 
-Configuration actuelle:
-- Navigateur: Microsoft Edge
-- Ecran 1: 1366x768 (Caisse)
-- Ecran 2: 1366x768 (Affichage Client)
+FICHIERS:
+---------
+lancer-caisse.bat  = Version simple (manuel)
+lancer-auto.vbs    = Version automatique (recommande)
 
 UTILISATION:
 ------------
-Double-cliquez sur "lancer-caisse.bat"
+Double-cliquez sur "lancer-auto.vbs"
 
-Ca ouvre automatiquement:
-- CAISSE sur ecran 1 (employe)
-- DISPLAY sur ecran 2 (client) en mode kiosk
+OU si ca ne marche pas:
+Double-cliquez sur "lancer-caisse.bat" et suivez les instructions
 
-RACCOURCIS CLAVIER (sans souris):
----------------------------------
-Win + Shift + Fleche Droite  = Deplacer vers ecran 2
-Win + Shift + Fleche Gauche  = Deplacer vers ecran 1
-F11                          = Plein ecran
-Echap                        = Quitter kiosk
-Alt + Tab                    = Changer fenetre
+RACCOURCIS CLAVIER IMPORTANTS:
+------------------------------
+Win + Shift + Fleche DROITE = Deplacer vers ecran 2
+Win + Shift + Fleche GAUCHE = Deplacer vers ecran 1
+F11                         = Plein ecran
+Alt + Tab                   = Changer de fenetre
+Alt + F4                    = Fermer fenetre
+
+CONFIGURATION ECRANS:
+---------------------
+Ecran 1 (gauche) = CAISSE (employe)
+Ecran 2 (droite) = DISPLAY (client)
 
 DEMARRAGE AUTOMATIQUE:
 ----------------------
-1. Win + R
-2. Taper: shell:startup
-3. Copier le raccourci de lancer-caisse.bat dans ce dossier
-
-SI PROBLEME:
-------------
-Si les fenetres ne s'ouvrent pas au bon endroit:
-1. Ouvrir lancer-caisse.bat avec Bloc-notes
-2. Changer 1366 par la largeur de votre ecran 1
+1. Appuyez Win + R
+2. Tapez: shell:startup
+3. Copiez lancer-auto.vbs dans ce dossier
