@@ -5,7 +5,7 @@
  */
 
 // Mode debug (mettre à false en production)
-define('DEBUG_MODE', false);
+define('DEBUG_MODE', true);
 
 // Configuration MySQL Hostinger
 define('DB_HOST', 'localhost');
