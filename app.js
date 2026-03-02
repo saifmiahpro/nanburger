@@ -716,6 +716,11 @@ function openCheckoutModal() {
 
 function generatePickupTimeSlots() {
     const select = checkoutDOM.pickupTime;
+    if (!select) {
+        console.error('pickupTime element not found');
+        return;
+    }
+
     select.innerHTML = '<option value="">Choisir une heure</option>';
 
     const now = new Date();
@@ -723,7 +728,7 @@ function generatePickupTimeSlots() {
     const currentMinutes = now.getMinutes();
 
     // Restaurant hours (11h-23h en semaine, 11h-00h ven/sam, 12h-22h dim)
-    const day = now.getDay();
+    const day = now.getDay(); // 0 = Dimanche
     let openHour = day === 0 ? 12 : 11; // Dimanche ouvre à 12h
     let closeHour = (day === 5 || day === 6) ? 24 : (day === 0 ? 22 : 23);
 
@@ -773,13 +778,17 @@ function generatePickupTimeSlots() {
         select.insertBefore(asap, select.options[1]);
     }
 
-    // If no slots available (shouldn't happen), add a message
-    if (select.options.length === 1) {
-        const noSlot = document.createElement('option');
-        noSlot.value = '';
-        noSlot.textContent = 'Aucun créneau disponible';
-        noSlot.disabled = true;
-        select.appendChild(noSlot);
+    // If no slots were generated, show all slots from opening to closing
+    if (select.options.length <= 1) {
+        for (let h = openHour; h < closeHour; h++) {
+            for (let m = 0; m < 60; m += 15) {
+                const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                const option = document.createElement('option');
+                option.value = timeStr;
+                option.textContent = timeStr;
+                select.appendChild(option);
+            }
+        }
     }
 }
 

@@ -1046,7 +1046,19 @@ body {
     display: none;
 }
 
+/* Ticket thermique 58mm - Optimisé pour imprimantes thermiques */
+@page {
+    size: 58mm auto;
+    margin: 0;
+}
+
 @media print {
+    html, body {
+        width: 58mm;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
     body * {
         visibility: hidden;
     }
@@ -1061,77 +1073,97 @@ body {
         position: absolute;
         left: 0;
         top: 0;
-        width: 80mm;
-        padding: 5mm;
+        width: 48mm;
+        padding: 2mm;
+        margin: 0;
         font-family: 'Courier New', monospace;
-        font-size: 12px;
+        font-size: 9px;
+        line-height: 1.2;
         color: black;
         background: white;
+        page-break-after: always;
     }
 
     .print-header {
         text-align: center;
-        margin-bottom: 10px;
-        padding-bottom: 10px;
+        margin-bottom: 3mm;
+        padding-bottom: 2mm;
         border-bottom: 1px dashed black;
     }
 
     .print-header h1 {
-        font-size: 20px;
-        margin-bottom: 4px;
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 1mm;
+    }
+
+    .print-header p {
+        font-size: 8px;
+        margin: 1mm 0;
     }
 
     .print-mode {
-        font-size: 14px;
+        font-size: 10px;
         font-weight: bold;
-        margin-top: 5px;
-        padding: 5px;
+        margin-top: 2mm;
+        padding: 2mm;
         border: 1px solid black;
         display: inline-block;
     }
 
     .print-order-num {
         text-align: center;
-        font-size: 28px;
+        font-size: 18px;
         font-weight: bold;
-        margin: 10px 0;
-        padding: 10px;
-        border: 2px solid black;
+        margin: 3mm 0;
+        padding: 3mm;
+        border: 1px solid black;
     }
 
     .print-items {
-        margin-bottom: 10px;
+        margin-bottom: 3mm;
     }
 
     .print-item {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 4px;
-        padding: 2px 0;
+        margin-bottom: 1mm;
+        padding: 1mm 0;
+        font-size: 9px;
     }
 
     .print-item-details {
-        font-size: 10px;
-        margin-left: 15px;
-        color: #666;
+        font-size: 8px;
+        margin-left: 2mm;
+        color: #333;
     }
 
     .print-total {
-        border-top: 2px solid black;
-        padding-top: 10px;
-        margin-top: 10px;
-        font-size: 18px;
+        border-top: 1px solid black;
+        padding-top: 2mm;
+        margin-top: 2mm;
+        font-size: 12px;
         font-weight: bold;
         display: flex;
         justify-content: space-between;
     }
 
+    .print-tva {
+        font-size: 8px !important;
+        margin-top: 2mm !important;
+        padding-top: 2mm !important;
+    }
+
     .print-footer {
         text-align: center;
-        margin-top: 15px;
-        padding-top: 10px;
+        margin-top: 3mm;
+        padding-top: 2mm;
         border-top: 1px dashed black;
-        font-size: 10px;
+        font-size: 8px;
+    }
+
+    .print-footer p {
+        margin: 1mm 0;
     }
 }
 
