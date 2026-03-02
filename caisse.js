@@ -561,26 +561,27 @@ function printTicket(orderNum, items, total, mode, paymentMethod) {
 <head>
     <title>Ticket ${orderNum}</title>
     <style>
+        * { font-weight: bold !important; }
         body {
             font-family: 'Courier New', monospace;
-            font-size: 14px;
+            font-size: 16px;
             width: 72mm;
             margin: 0;
             padding: 8px;
             background: white;
             color: black;
+            font-weight: bold;
         }
         .header { text-align: center; border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
-        h1 { font-size: 24px; margin: 0 0 5px 0; }
-        .info { font-size: 12px; margin: 3px 0; }
-        .mode { display: inline-block; border: 2px solid black; padding: 5px 10px; margin: 8px 0; font-weight: bold; font-size: 16px; }
-        .order-num { text-align: center; font-size: 40px; font-weight: bold; border: 3px solid black; padding: 10px; margin: 12px 0; }
+        h1 { font-size: 28px; margin: 0 0 5px 0; }
+        .info { font-size: 14px; margin: 4px 0; }
+        .mode { display: inline-block; border: 2px solid black; padding: 6px 12px; margin: 8px 0; font-size: 18px; }
+        .order-num { text-align: center; font-size: 48px; border: 3px solid black; padding: 12px; margin: 12px 0; }
         table { width: 100%; border-collapse: collapse; }
-        td { padding: 5px 2px; font-size: 14px; font-weight: bold; }
-        .detail { font-size: 11px; font-weight: normal; }
-        .total { border-top: 3px solid black; padding-top: 10px; margin-top: 10px; font-size: 22px; font-weight: bold; display: flex; justify-content: space-between; }
-        .tva { text-align: center; font-size: 11px; margin-top: 8px; }
-        .footer { text-align: center; border-top: 2px dashed black; padding-top: 10px; margin-top: 12px; font-size: 12px; }
+        td { padding: 6px 2px; font-size: 16px; }
+        .total { border-top: 3px solid black; padding-top: 12px; margin-top: 12px; font-size: 24px; display: flex; justify-content: space-between; }
+        .tva { text-align: center; font-size: 14px; margin-top: 10px; }
+        .footer { text-align: center; border-top: 2px dashed black; padding-top: 10px; margin-top: 12px; font-size: 14px; }
         @page { size: 80mm auto; margin: 0; }
     </style>
 </head>
@@ -591,7 +592,7 @@ function printTicket(orderNum, items, total, mode, paymentMethod) {
         <div class="info">CC L'Oree du Village</div>
         <div class="info">31620 Castelnau</div>
         <div class="info">SIRET: 995 176 310 00010</div>
-        <div style="margin-top:8px;font-size:14px">${date} - ${time}</div>
+        <div style="margin-top:8px;font-size:16px">${date} - ${time}</div>
         <div class="mode">${mode === 'surplace' ? 'SUR PLACE' : 'A EMPORTER'}</div>
         ${paymentMethod ? `<div class="mode">${paymentMethod}</div>` : ''}
     </div>
@@ -602,10 +603,10 @@ function printTicket(orderNum, items, total, mode, paymentMethod) {
 
     <div class="total">
         <span>TOTAL</span>
-        <span>${total.toFixed(2)} €</span>
+        <span>${total.toFixed(2)} EUR</span>
     </div>
 
-    <div class="tva">HT: ${totalHT.toFixed(2)}€ | TVA ${tvaRate}%: ${tvaAmount.toFixed(2)}€</div>
+    <div class="tva">HT: ${totalHT.toFixed(2)} | TVA ${tvaRate}%: ${tvaAmount.toFixed(2)}</div>
 
     <div class="footer">
         <p>Merci de votre visite!</p>
@@ -735,45 +736,46 @@ async function printWebOrder(orderId) {
 <head>
     <title>Web ${order.order_number}</title>
     <style>
+        * { font-weight: bold !important; }
         body {
             font-family: 'Courier New', monospace;
-            font-size: 14px;
+            font-size: 16px;
             width: 72mm;
             margin: 0;
             padding: 8px;
             background: white;
             color: black;
+            font-weight: bold;
         }
         .header { text-align: center; border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
-        h1 { font-size: 24px; margin: 0 0 5px 0; }
-        .mode { display: inline-block; background: black; color: white; padding: 5px 10px; margin: 8px 0; font-weight: bold; font-size: 16px; }
-        .order-num { text-align: center; font-size: 36px; font-weight: bold; border: 3px solid black; padding: 10px; margin: 12px 0; }
-        .customer { background: #eee; padding: 8px; margin: 10px 0; font-size: 16px; text-align: center; }
+        h1 { font-size: 28px; margin: 0 0 5px 0; }
+        .info { font-size: 14px; margin: 4px 0; }
+        .mode { display: inline-block; background: black; color: white; padding: 6px 12px; margin: 8px 0; font-size: 18px; }
+        .order-num { text-align: center; font-size: 48px; border: 3px solid black; padding: 12px; margin: 12px 0; }
+        .customer { background: #ddd; padding: 10px; margin: 10px 0; font-size: 18px; text-align: center; }
         table { width: 100%; border-collapse: collapse; }
-        td { padding: 5px 2px; font-size: 14px; }
-        .total { border-top: 3px solid black; padding-top: 10px; margin-top: 10px; font-size: 20px; font-weight: bold; display: flex; justify-content: space-between; }
-        .tva { text-align: center; font-size: 11px; margin-top: 8px; }
-        .footer { text-align: center; border-top: 2px dashed black; padding-top: 10px; margin-top: 12px; font-size: 12px; }
-        .pickup { background: #000; color: white; padding: 8px; margin: 10px 0; text-align: center; font-size: 16px; font-weight: bold; }
+        td { padding: 6px 2px; font-size: 16px; }
+        .total { border-top: 3px solid black; padding-top: 12px; margin-top: 12px; font-size: 24px; display: flex; justify-content: space-between; }
+        .tva { text-align: center; font-size: 14px; margin-top: 10px; }
+        .footer { text-align: center; border-top: 2px dashed black; padding-top: 10px; margin-top: 12px; font-size: 14px; }
+        .pickup { background: #000; color: white; padding: 10px; margin: 10px 0; text-align: center; font-size: 20px; }
         @page { size: 80mm auto; margin: 0; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>NAN.BURGER</h1>
-        <div>100% HALAL</div>
-        <div style="font-size:11px;margin-top:5px">
-            CC L'Oree du Village<br>
-            31620 Castelnau-d'Estretefonds
-        </div>
-        <div style="margin-top:8px">${date} - ${time}</div>
+        <div class="info">100% HALAL</div>
+        <div class="info">CC L'Oree du Village</div>
+        <div class="info">31620 Castelnau</div>
+        <div style="margin-top:8px;font-size:16px">${date} - ${time}</div>
         <div class="mode">COMMANDE WEB</div>
     </div>
 
     <div class="order-num">${order.order_number}</div>
 
     <div class="customer">
-        <strong>${order.customer_name}</strong>
+        ${order.customer_name}
         ${order.customer_phone ? `<br>Tel: ${order.customer_phone}` : ''}
     </div>
 
@@ -783,10 +785,10 @@ async function printWebOrder(orderId) {
 
     <div class="total">
         <span>TOTAL</span>
-        <span>${order.total.toFixed(2)} €</span>
+        <span>${order.total.toFixed(2)} EUR</span>
     </div>
 
-    <div class="tva">HT: ${totalHT.toFixed(2)}€ | TVA ${tvaRate}%: ${tvaAmount.toFixed(2)}€</div>
+    <div class="tva">HT: ${totalHT.toFixed(2)} | TVA ${tvaRate}%: ${tvaAmount.toFixed(2)}</div>
 
     <div class="footer">
         <p>Merci!</p>
