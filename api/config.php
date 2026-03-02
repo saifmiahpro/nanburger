@@ -7,11 +7,11 @@
 // Mode debug (mettre à false en production)
 define('DEBUG_MODE', false);
 
-// Configuration MySQL - À MODIFIER avec vos identifiants Hostinger
+// Configuration MySQL Hostinger
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'u123456789_nanburger');  // Remplacez par votre nom de BDD
-define('DB_USER', 'u123456789_admin');       // Remplacez par votre utilisateur
-define('DB_PASS', 'VotreMotDePasse123!');    // Remplacez par votre mot de passe
+define('DB_NAME', 'u787120300_nanburger');
+define('DB_USER', 'u787120300_admin');
+define('DB_PASS', 'Aerius+212+880');
 
 // Timezone
 date_default_timezone_set('Europe/Paris');
