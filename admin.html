@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAN BURGER | Dashboard Cuisine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+    <link rel="icon" type="image/png" href="logo.png">
+</head>
+
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="dash-header">
+            <div class="dash-brand">
+                <img src="logo.png" alt="NanBurger Logo" class="dash-logo">
+                <div>
+                    <h1>NAN BURGER</h1>
+                    <span class="dash-subtitle">Dashboard Cuisine</span>
+                </div>
+            </div>
+            <div class="dash-stats">
+                <div class="stat-box">
+                    <span class="stat-value" id="statPending">0</span>
+                    <span class="stat-label">En attente</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value" id="statPreparing">0</span>
+                    <span class="stat-label">En cours</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value" id="statReady">0</span>
+                    <span class="stat-label">Prêtes</span>
+                </div>
+                <div class="stat-box highlight">
+                    <span class="stat-value" id="statRevenue">0 €</span>
+                    <span class="stat-label">CA du jour</span>
+                </div>
+            </div>
+            <div class="dash-status">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Connexion...</span>
+            </div>
+        </header>
+
+        <!-- Orders Grid -->
+        <main class="orders-container">
+            <!-- Colonne: En attente -->
+            <div class="orders-column">
+                <div class="column-header pending">
+                    <span class="column-icon">🔔</span>
+                    <h2>En attente</h2>
+                    <span class="column-count" id="countPending">0</span>
+                </div>
+                <div class="orders-list" id="ordersPending"></div>
+            </div>
+
+            <!-- Colonne: En préparation -->
+            <div class="orders-column">
+                <div class="column-header preparing">
+                    <span class="column-icon">🍳</span>
+                    <h2>En préparation</h2>
+                    <span class="column-count" id="countPreparing">0</span>
+                </div>
+                <div class="orders-list" id="ordersPreparing"></div>
+            </div>
+
+            <!-- Colonne: Prêtes -->
+            <div class="orders-column">
+                <div class="column-header ready">
+                    <span class="column-icon">✅</span>
+                    <h2>Prêtes</h2>
+                    <span class="column-count" id="countReady">0</span>
+                </div>
+                <div class="orders-list" id="ordersReady"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Zone d'impression cachée -->
+    <div id="printArea" class="print-area"></div>
+
+    <!-- Audio pour notification -->
+    <audio id="notificationSound" preload="auto">
+        <source
+            src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleAYGaKHhvYF0R0NmfJucjXdvfY2VjYmHiYeNi4uFgYGDgYOFgYGDhYWDhYODhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhQ=="
+            type="audio/wav">
+    </audio>
+
+    <script src="admin.js"></script>
+</body>
+
+</html>

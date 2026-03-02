@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NAN BURGER | Commander</title>
+    <meta name="description" content="Commandez chez Nan Burger. Burgers, Tacos, Tex-Mex. 100% Halal.">
+    <meta name="theme-color" content="#FFD200">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="logo.png">
+</head>
+
+<body>
+    <!-- App Container -->
+    <div class="app">
+        <!-- Bottom Navigation (Mobile-first) -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-view="menu">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18M3 12h18M3 18h18" />
+                    </svg>
+                </div>
+                <span>Menu</span>
+            </button>
+            <button class="nav-item" data-view="search">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg>
+                </div>
+                <span>Recherche</span>
+            </button>
+            <button class="nav-item cart-nav" id="cartNavBtn">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 6h15l-1.5 9h-12z" />
+                        <circle cx="9" cy="20" r="1" />
+                        <circle cx="18" cy="20" r="1" />
+                    </svg>
+                    <span class="cart-badge" id="cartBadge">0</span>
+                </div>
+                <span>Panier</span>
+            </button>
+            <button class="nav-item" data-view="info">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 16v-4M12 8h.01" />
+                    </svg>
+                </div>
+                <span>Infos</span>
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-top">
+                    <div class="brand">
+                        <img src="logo.png" alt="NanBurger Logo" class="brand-logo">
+                        <div class="brand-info">
+                            <h1>NAN BURGER</h1>
+                            <div class="brand-meta">
+                                <span class="halal-tag">HALAL ✓</span>
+                                <span class="status open">Ouvert</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="header-action" id="infoBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 16v-4M12 8h.01" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Promo Banner -->
+                <div class="promo-banner">
+                    <div class="promo-content">
+                        <span class="promo-tag">🔥 PROMO</span>
+                        <p>-20% sur votre 1ère commande avec <strong>BIENVENUE20</strong></p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Category Pills -->
+            <div class="category-section">
+                <div class="category-pills" id="categoryPills">
+                    <button class="pill active" data-cat="all">Tout</button>
+                    <button class="pill" data-cat="burgers">Burgers</button>
+                    <button class="pill" data-cat="naans">Naan</button>
+                    <button class="pill" data-cat="tacos">Tacos</button>
+                    <button class="pill" data-cat="sandwichs">Sandwichs</button>
+                    <button class="pill" data-cat="paninis">Paninis</button>
+                    <button class="pill" data-cat="buckets">Buckets</button>
+                    <button class="pill" data-cat="texmex">Tex-Mex</button>
+                    <button class="pill" data-cat="assiettes">Assiettes</button>
+                    <button class="pill" data-cat="bowls">Bowls</button>
+                    <button class="pill" data-cat="sides">Extras</button>
+                    <button class="pill" data-cat="boissons">Boissons</button>
+                    <button class="pill" data-cat="supplements">Suppl.</button>
+                </div>
+            </div>
+
+            <!-- Menu Content -->
+            <div class="menu-content" id="menuContent">
+                <!-- Products will be dynamically inserted -->
+            </div>
+        </main>
+
+        <!-- Cart Sheet -->
+        <div class="sheet-backdrop" id="sheetBackdrop"></div>
+        <div class="cart-sheet" id="cartSheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-header">
+                <h2>Votre commande</h2>
+                <button class="clear-cart" id="clearCart">Vider</button>
+            </div>
+            <div class="sheet-content" id="cartContent">
+                <div class="empty-cart" id="emptyCart">
+                    <div class="empty-icon">🛒</div>
+                    <p>Votre panier est vide</p>
+                    <span>Ajoutez des articles pour commencer</span>
+                </div>
+                <div class="cart-items" id="cartItems"></div>
+            </div>
+            <div class="sheet-footer" id="cartFooter">
+                <div class="cart-summary">
+                    <div class="summary-row">
+                        <span>Sous-total</span>
+                        <span id="subtotal">0.00 €</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Livraison</span>
+                        <span class="free">Gratuite</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total</span>
+                        <span id="totalAmount">0.00 €</span>
+                    </div>
+                </div>
+                <button class="checkout-btn" id="checkoutBtn">
+                    <span>Commander</span>
+                    <span class="checkout-price" id="checkoutPrice">0.00 €</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Product Detail Sheet - Modal inside backdrop for proper click handling -->
+        <div class="product-backdrop" id="productBackdrop">
+            <div class="product-sheet" id="productSheet">
+                <div class="sheet-handle"></div>
+                <button class="sheet-close" id="productClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+                <div class="product-header">
+                    <div class="product-icon-large" id="productIcon">🍔</div>
+                    <span class="product-tag" id="productTag">BURGER</span>
+                </div>
+                <div class="product-info">
+                    <h2 id="productName">Cheese Burger</h2>
+                    <p id="productDesc">Description du produit</p>
+                    <div class="product-prices">
+                        <div class="price-option selected" data-type="menu">
+                            <span class="price-label">Menu</span>
+                            <span class="price-value" id="priceMenu">7.50 €</span>
+                            <span class="price-includes">+ Frites + Boisson</span>
+                        </div>
+                        <div class="price-option" data-type="seul">
+                            <span class="price-label">Seul</span>
+                            <span class="price-value" id="priceSeul">5.50 €</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="product-options" id="productOptions"></div>
+                <div class="product-footer">
+                    <div class="qty-control">
+                        <button class="qty-btn" id="qtyMinus">−</button>
+                        <span class="qty-value" id="qtyValue">1</span>
+                        <button class="qty-btn" id="qtyPlus">+</button>
+                    </div>
+                    <button class="add-to-cart-btn" id="addToCartBtn">
+                        <span>Ajouter</span>
+                        <span id="addPrice">7.50 €</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search View -->
+        <div class="search-view" id="searchView">
+            <div class="search-header">
+                <div class="search-input-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg>
+                    <input type="text" placeholder="Rechercher un produit..." id="searchInput">
+                    <button class="search-clear" id="searchClear">×</button>
+                </div>
+            </div>
+            <div class="search-results" id="searchResults"></div>
+        </div>
+
+        <!-- Info View -->
+        <div class="info-view" id="infoView">
+            <div class="info-header">
+                <img src="logo.png" alt="NanBurger Logo" class="info-logo">
+                <h1>NAN BURGER</h1>
+                <p class="info-tagline">Burgers, Tacos, Tex-Mex | 100% Halal</p>
+            </div>
+            <div class="info-content">
+                <div class="info-card">
+                    <div class="info-card-icon">📍</div>
+                    <div class="info-card-content">
+                        <h3>Adresse</h3>
+                        <p>CC L'Orée du Village<br>1 Avenue de Toulouse<br>31620 Castelnau-d'Estrétefonds</p>
+                        <a href="https://maps.google.com/?q=CC+L'Or%C3%A9e+du+Village+1+Avenue+de+Toulouse+31620+Castelnau-d'Estr%C3%A9tefonds" target="_blank" class="info-link">Voir sur Google Maps</a>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-icon">🕐</div>
+                    <div class="info-card-content">
+                        <h3>Horaires</h3>
+                        <div class="hours-grid">
+                            <span>Lun - Jeu</span><span>11h - 23h</span>
+                            <span>Ven - Sam</span><span>11h - 00h</span>
+                            <span>Dimanche</span><span>12h - 22h</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-icon">📞</div>
+                    <div class="info-card-content">
+                        <h3>Contact</h3>
+                        <p><a href="tel:0561098140" class="info-link">05 61 09 81 40</a></p>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-icon">🚗</div>
+                    <div class="info-card-content">
+                        <h3>Modes de retrait</h3>
+                        <p>Click & Collect uniquement<br>Commandez et récupérez sur place!</p>
+                    </div>
+                </div>
+            </div>
+            <div class="info-footer">
+                <p>Suivez-nous</p>
+                <div class="social-links">
+                    <a href="#" class="social-btn">Instagram</a>
+                    <a href="#" class="social-btn">Facebook</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div class="toast" id="toast">
+            <span class="toast-icon">✓</span>
+            <span class="toast-msg" id="toastMsg">Ajouté au panier</span>
+        </div>
+
+        <!-- Checkout Modal -->
+        <div class="checkout-backdrop" id="checkoutBackdrop">
+            <div class="checkout-modal" id="checkoutModal">
+                <div class="sheet-handle"></div>
+                <button class="sheet-close" id="checkoutClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+                <div class="checkout-header">
+                    <h2>Finaliser la commande</h2>
+                    <p>Entrez vos informations pour récupérer votre commande</p>
+                </div>
+                <form class="checkout-form" id="checkoutForm">
+                    <div class="form-group">
+                        <label for="customerName">Votre prénom *</label>
+                        <input type="text" id="customerName" placeholder="Ex: Mohamed" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone">Téléphone (optionnel)</label>
+                        <input type="tel" id="customerPhone" placeholder="Ex: 06 12 34 56 78">
+                    </div>
+                    <div class="checkout-summary">
+                        <div class="summary-row">
+                            <span>Total à payer</span>
+                            <span class="checkout-total" id="checkoutTotal">0.00 €</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="confirm-order-btn" id="confirmOrderBtn">
+                        <span>Confirmer la commande</span>
+                    </button>
+                </form>
+                <div class="checkout-success" id="checkoutSuccess">
+                    <div class="success-icon">✅</div>
+                    <h3>Commande envoyée!</h3>
+                    <p class="success-order-num" id="successOrderNum">NB-001</p>
+                    <p>Votre commande est en cours de préparation.<br>Vous serez appelé quand elle sera prête!</p>
+                    <button class="close-success-btn" id="closeSuccessBtn">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

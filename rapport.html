@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAN BURGER | Rapport Journalier</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/png" href="logo.png">
+    <style>
+        :root {
+            --primary: #FFD200;
+            --primary-dark: #E5BC00;
+            --bg: #0a0a0a;
+            --bg-card: #1a1a1a;
+            --text: #fff;
+            --text-secondary: #888;
+            --border: #333;
+            --success: #10B981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), #E55A00);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .brand h1 {
+            font-size: 24px;
+        }
+
+        .brand p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .date-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .date-selector input {
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .date-selector button {
+            padding: 12px 24px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-back {
+            padding: 12px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: inherit;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .stat-card.highlight {
+            background: linear-gradient(135deg, var(--primary), #E55A00);
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .stat-card.highlight .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        .order-num {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .order-type {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .order-type.web {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3B82F6;
+        }
+
+        .order-type.surplace {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+        }
+
+        .order-type.emporter {
+            background: rgba(245, 158, 11, 0.2);
+            color: #F59E0B;
+        }
+
+        .actions {
+            display: flex;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-print {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-export {
+            background: var(--success);
+            color: white;
+        }
+
+        .breakdown {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .breakdown-item {
+            background: var(--bg);
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .breakdown-label {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .breakdown-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+
+            .stat-card {
+                border: 1px solid #ddd;
+            }
+
+            .stat-card.highlight {
+                background: #f0f0f0;
+            }
+
+            .section {
+                border: 1px solid #ddd;
+            }
+
+            .btn,
+            .date-selector {
+                display: none;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .breakdown {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== TICKET PRINT STYLES ===== */
+        .ticket-print-area {
+            display: none;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .ticket-print-area,
+            .ticket-print-area * {
+                visibility: visible;
+            }
+
+            .ticket-print-area {
+                display: block;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 80mm;
+                padding: 5mm;
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                color: black;
+                background: white;
+            }
+
+            .ticket-header {
+                text-align: center;
+                margin-bottom: 10px;
+                padding-bottom: 10px;
+                border-bottom: 1px dashed black;
+            }
+
+            .ticket-header h1 {
+                font-size: 20px;
+                margin-bottom: 4px;
+            }
+
+            .ticket-mode {
+                font-size: 14px;
+                font-weight: bold;
+                margin-top: 5px;
+                padding: 5px;
+                border: 1px solid black;
+                display: inline-block;
+            }
+
+            .ticket-order-num {
+                text-align: center;
+                font-size: 28px;
+                font-weight: bold;
+                margin: 10px 0;
+                padding: 10px;
+                border: 2px solid black;
+            }
+
+            .ticket-items {
+                margin-bottom: 10px;
+            }
+
+            .ticket-item {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 4px;
+                padding: 2px 0;
+            }
+
+            .ticket-item-details {
+                font-size: 10px;
+                margin-left: 15px;
+                color: #666;
+            }
+
+            .ticket-total {
+                border-top: 2px solid black;
+                padding-top: 10px;
+                margin-top: 10px;
+                font-size: 18px;
+                font-weight: bold;
+                display: flex;
+                justify-content: space-between;
+            }
+
+            .ticket-footer {
+                text-align: center;
+                margin-top: 15px;
+                padding-top: 10px;
+                border-top: 1px dashed black;
+                font-size: 10px;
+            }
+
+            .ticket-tva {
+                text-align: center;
+                font-size: 10px;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="brand">
+            <img src="logo.png" alt="NanBurger Logo" class="brand-logo">
+            <div>
+                <h1>Rapport Journalier</h1>
+                <p>NAN BURGER - Comptabilité</p>
+            </div>
+        </div>
+        <div class="date-selector">
+            <input type="date" id="reportDate">
+            <button onclick="loadReport()">Charger</button>
+            <a href="/caisse.html" class="btn-back">← Retour Caisse</a>
+        </div>
+    </header>
+
+    <!-- Stats Overview -->
+    <div class="stats-grid">
+        <div class="stat-card highlight">
+            <div class="stat-value" id="totalRevenue">0.00 €</div>
+            <div class="stat-label">Chiffre d'affaires</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="totalOrders">0</div>
+            <div class="stat-label">Commandes</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="avgOrder">0.00 €</div>
+            <div class="stat-label">Panier moyen</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="webOrders">0</div>
+            <div class="stat-label">Commandes Web</div>
+        </div>
+        <div class="stat-card"
+            style="grid-column: span 2; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
+            <div class="stat-value" id="totalCB">0.00 €</div>
+            <div class="stat-label">💳 Total Carte Bancaire</div>
+        </div>
+        <div class="stat-card"
+            style="grid-column: span 2; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+            <div class="stat-value" id="totalCash">0.00 €</div>
+            <div class="stat-label">💶 Total Espèces</div>
+        </div>
+    </div>
+
+    <!-- Breakdown by Type -->
+    <div class="section">
+        <h2>📊 Répartition par type</h2>
+        <div class="breakdown">
+            <div class="breakdown-item">
+                <div class="breakdown-label">🌐 Commandes Web</div>
+                <div class="breakdown-value" id="webRevenue">0.00 €</div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-label">🍽️ Sur place</div>
+                <div class="breakdown-value" id="surplaceRevenue">0.00 €</div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-label">🥡 À emporter</div>
+                <div class="breakdown-value" id="emporterRevenue">0.00 €</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders List -->
+    <div class="section">
+        <h2>📋 Liste des commandes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>N°</th>
+                    <th>Heure</th>
+                    <th>Type</th>
+                    <th>Client</th>
+                    <th>Articles</th>
+                    <th>Paiement</th>
+                    <th>Total</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="ordersTable">
+                <tr>
+                    <td colspan="7" style="text-align:center;color:var(--text-secondary)">
+                        Aucune commande
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+        <button class="btn btn-print" onclick="window.print()">🖨️ Imprimer le rapport</button>
+        <button class="btn btn-export" onclick="exportCSV()">📊 Exporter CSV</button>
+    </div>
+
+    <div class="ticket-print-area" id="ticketPrintArea"></div>
+
+    <script>
+        const API_URL = window.location.origin;
+        let orders = [];
+
+        // Set today's date by default
+        document.getElementById('reportDate').valueAsDate = new Date();
+
+        // Load on page load
+        loadReport();
+
+        async function loadReport() {
+            const date = document.getElementById('reportDate').value;
+
+            try {
+                const res = await fetch(`${API_URL}/api/orders?date=${date}`);
+                orders = await res.json();
+
+                // Filter by date (in case API doesn't filter)
+                const selectedDate = new Date(date).toDateString();
+                orders = orders.filter(o => new Date(o.created_at).toDateString() === selectedDate);
+
+                updateStats();
+                renderOrders();
+            } catch (e) {
+                console.error('Error loading report:', e);
+            }
+        }
+
+        function updateStats() {
+            const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
+            const totalOrders = orders.length;
+            const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+            // Web orders (not "Sur place" or "À emporter")
+            const webOrdersList = orders.filter(o =>
+                o.customer_name !== 'Sur place' && o.customer_name !== 'À emporter'
+            );
+            const surplaceOrders = orders.filter(o => o.customer_name === 'Sur place');
+            const emporterOrders = orders.filter(o => o.customer_name === 'À emporter');
+
+            document.getElementById('totalRevenue').textContent = totalRevenue.toFixed(2) + ' €';
+            document.getElementById('totalOrders').textContent = totalOrders;
+            document.getElementById('avgOrder').textContent = avgOrder.toFixed(2) + ' €';
+            document.getElementById('webOrders').textContent = webOrdersList.length;
+
+            const totalCB = orders.filter(o => o.payment_method === 'Carte Bancaire').reduce((sum, o) => sum + o.total, 0);
+            const totalCash = orders.filter(o => o.payment_method === 'Espèces').reduce((sum, o) => sum + o.total, 0);
+            document.getElementById('totalCB').textContent = totalCB.toFixed(2) + ' €';
+            document.getElementById('totalCash').textContent = totalCash.toFixed(2) + ' €';
+
+            document.getElementById('webRevenue').textContent =
+                webOrdersList.reduce((sum, o) => sum + o.total, 0).toFixed(2) + ' €';
+            document.getElementById('surplaceRevenue').textContent =
+                surplaceOrders.reduce((sum, o) => sum + o.total, 0).toFixed(2) + ' €';
+            document.getElementById('emporterRevenue').textContent =
+                emporterOrders.reduce((sum, o) => sum + o.total, 0).toFixed(2) + ' €';
+        }
+
+        function renderOrders() {
+            const tbody = document.getElementById('ordersTable');
+
+            if (orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-secondary)">
+                    Aucune commande pour cette date
+                </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = orders.map(order => {
+                const time = new Date(order.created_at).toLocaleTimeString('fr-FR', {
+                    hour: '2-digit', minute: '2-digit'
+                });
+
+                let type = 'web';
+                let typeLabel = '🌐 Web';
+                if (order.customer_name === 'Sur place') {
+                    type = 'surplace';
+                    typeLabel = '🍽️ Sur place';
+                } else if (order.customer_name === 'À emporter') {
+                    type = 'emporter';
+                    typeLabel = '🥡 À emporter';
+                }
+
+                const items = order.items.map(i => `${i.qty}x ${i.name}`).join(', ');
+
+                return `
+                    <tr>
+                        <td class="order-num">${order.order_number}</td>
+                        <td>${time}</td>
+                        <td><span class="order-type ${type}">${typeLabel}</span></td>
+                        <td>${order.customer_name}${order.customer_phone ? '<br><small>' + order.customer_phone + '</small>' : ''}</td>
+                        <td><small>${items}</small></td>
+                        <td><small>${order.payment_method || 'Non spécifié'}</small></td>
+                        <td><strong>${order.total.toFixed(2)} €</strong></td>
+                        <td style="display:flex; gap:4px;">
+                            <button onclick="reprintTicket(${order.id})" style="padding:6px 8px; background:var(--bg-card); border:1px solid var(--border); border-radius:6px; color:var(--text); cursor:pointer;" title="Imprimer le ticket">🖨️</button>
+                            <button onclick="printInvoice(${order.id})" style="padding:6px 8px; background:var(--bg-card); border:1px solid var(--border); border-radius:6px; color:var(--text); cursor:pointer;" title="Justificatif TVA">📄</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function exportCSV() {
+            const date = document.getElementById('reportDate').value;
+            let csv = 'Numéro,Date,Heure,Type,Client,Téléphone,Articles,Paiement,Total\n';
+
+            orders.forEach(order => {
+                const datetime = new Date(order.created_at);
+                const dateStr = datetime.toLocaleDateString('fr-FR');
+                const time = datetime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+                let type = 'Web';
+                if (order.customer_name === 'Sur place') type = 'Sur place';
+                else if (order.customer_name === 'À emporter') type = 'À emporter';
+
+                const items = order.items.map(i => `${i.qty}x ${i.name}`).join(' / ');
+
+                csv += `"${order.order_number}","${dateStr}","${time}","${type}","${order.customer_name}","${order.customer_phone || ''}","${items}","${order.payment_method || 'Non spécifié'}","${order.total.toFixed(2)}"\n`;
+            });
+
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `rapport_nanburger_${date}.csv`;
+            link.click();
+        }
+
+        function reprintTicket(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const datetime = new Date(order.created_at);
+            const time = datetime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = datetime.toLocaleDateString('fr-FR');
+
+            let modeLabel = '🌐 COMMANDE WEB';
+            if (order.customer_name === 'Sur place') modeLabel = '🍽️ SUR PLACE';
+            else if (order.customer_name === 'À emporter') modeLabel = '🥡 À EMPORTER';
+
+            const itemsHtml = order.items.map(item => {
+                const optStr = Object.values(item.options || {}).filter(v => v).join(', ');
+                return `
+                    <div class="ticket-item">
+                        <span>${item.qty}x ${item.name}</span>
+                        <span>${(item.price * item.qty).toFixed(2)} €</span>
+                    </div>
+                    <div class="ticket-item-details">${item.format === 'menu' ? 'Menu' : 'Seul'}${optStr ? ' - ' + optStr : ''}</div>
+                `;
+            }).join('');
+
+            // Calcul de la TVA (Ex: 10% sur le total TTC)
+            const tvaMontant = (order.total - (order.total / 1.10)).toFixed(2);
+            const htMontant = (order.total / 1.10).toFixed(2);
+
+            const html = `
+                <div class="ticket-header">
+                    <h1>NAN.BURGER</h1>
+                    <p style="font-size: 11px;">100% HALAL</p>
+                    <p style="font-size: 9px; margin-top: 4px;">
+                        CC L'Orée du Village<br>
+                        1 Avenue de Toulouse<br>
+                        31620 Castelnau-d'Estrétefonds
+                    </p>
+                    <p style="font-size: 9px; margin-top: 4px;">SIRET: 995 176 310 00010</p>
+                    <p style="margin-top: 8px;">${dateStr} - ${time}</p>
+                    <div class="ticket-mode">${modeLabel}</div>
+                    ${order.payment_method ? `<div class="ticket-mode" style="margin-top:5px; font-size:14px;">Paiement : ${order.payment_method}</div>` : ''}
+                </div>
+
+                <div class="ticket-order-num">${order.order_number}</div>
+
+                ${order.customer_name !== 'Sur place' && order.customer_name !== 'À emporter' ? `
+                <div style="margin-bottom:10px;">
+                    <strong>${order.customer_name}</strong><br>
+                    ${order.customer_phone ? `Tel: ${order.customer_phone}` : ''}
+                </div>` : ''}
+
+                <div class="ticket-items">
+                    ${itemsHtml}
+                </div>
+
+                <div class="ticket-total">
+                    <span>TOTAL TTC</span>
+                    <span>${order.total.toFixed(2)} €</span>
+                </div>
+
+                <div class="ticket-tva">
+                    Total HT : ${htMontant} € | TVA (10%) : ${tvaMontant} €
+                </div>
+
+                <div class="ticket-footer">
+                    <p>Merci de votre visite!</p>
+                    <p>À bientôt chez NAN.BURGER</p>
+                    <p style="margin-top:5px; font-size:8px;">SAS au capital de 500€</p>
+                    <p style="font-size:9px;">DUPLICATA</p>
+                </div>
+            `;
+
+            document.getElementById('ticketPrintArea').innerHTML = html;
+
+            // Masquer les autres éléments temporairement
+            const style = document.createElement('style');
+            style.id = 'temp-print-style';
+            style.innerHTML = `
+                @media print {
+                    .stats-grid, .section, .actions, .header { display: none !important; }
+                    body { padding: 0 !important; margin: 0 !important; }
+                }
+            `;
+            document.head.appendChild(style);
+
+            window.print();
+
+            // Nettoyage
+            document.head.removeChild(style);
+        }
+
+        function printInvoice(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const datetime = new Date(order.created_at);
+            const time = datetime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = datetime.toLocaleDateString('fr-FR');
+
+            // TVA calculation (10% for restaurant food)
+            const tvaRate = 10;
+            const totalTTC = order.total;
+            const totalHT = totalTTC / (1 + tvaRate / 100);
+            const tvaAmount = totalTTC - totalHT;
+
+            const itemsHtml = order.items.map(item => {
+                const optStr = Object.values(item.options || {}).filter(v => v).join(', ');
+                const itemTotal = item.price * item.qty;
+                return `
+                    <div class="ticket-item">
+                        <span>${item.qty}x ${item.name}</span>
+                        <span>${itemTotal.toFixed(2)} €</span>
+                    </div>
+                    <div class="ticket-item-details">${item.format === 'menu' ? 'Menu' : 'Seul'}${optStr ? ' - ' + optStr : ''}</div>
+                `;
+            }).join('');
+
+            const html = `
+                <div class="ticket-header">
+                    <h1>NAN.BURGER</h1>
+                    <p style="font-size: 11px;">100% HALAL</p>
+                    <p style="font-size: 9px; margin-top: 5px;">
+                        NAN.BURGER SAS<br>
+                        CC L'Orée du Village<br>
+                        1 Avenue de Toulouse<br>
+                        31620 Castelnau-d'Estrétefonds
+                    </p>
+                    <p style="font-size: 9px; margin-top: 4px;">
+                        SIRET: 995 176 310 00010<br>
+                        Capital: 500,00 €
+                    </p>
+                    <p style="margin-top: 10px;">${dateStr} - ${time}</p>
+                </div>
+
+                <div style="text-align: center; font-weight: bold; margin: 10px 0; padding: 8px; border: 2px solid black; font-size: 14px;">
+                    JUSTIFICATIF DE PAIEMENT
+                </div>
+
+                <div class="ticket-order-num">${order.order_number}</div>
+
+                ${order.customer_name !== 'Sur place' && order.customer_name !== 'À emporter' ? `
+                <div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed black;">
+                    <strong>Client:</strong> ${order.customer_name}<br>
+                    ${order.customer_phone ? `Tel: ${order.customer_phone}` : ''}
+                </div>` : ''}
+
+                <div class="ticket-items">
+                    ${itemsHtml}
+                </div>
+
+                <div style="border-top: 1px dashed black; padding-top: 8px; margin-top: 8px; font-size: 11px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span>Total HT</span>
+                        <span>${totalHT.toFixed(2)} €</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span>TVA (${tvaRate}%)</span>
+                        <span>${tvaAmount.toFixed(2)} €</span>
+                    </div>
+                </div>
+
+                <div class="ticket-total">
+                    <span>TOTAL TTC</span>
+                    <span>${totalTTC.toFixed(2)} €</span>
+                </div>
+
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed black; font-size: 11px;">
+                    <strong>Mode de paiement:</strong> ${order.payment_method || 'Non spécifié'}
+                </div>
+
+                <div class="ticket-footer">
+                    <p>Merci de votre visite!</p>
+                    <p>À bientôt chez NAN.BURGER</p>
+                    <p style="margin-top: 8px; font-size: 9px;">
+                        Document à conserver<br>
+                        TVA non récupérable pour les particuliers
+                    </p>
+                </div>
+            `;
+
+            document.getElementById('ticketPrintArea').innerHTML = html;
+
+            const style = document.createElement('style');
+            style.id = 'temp-print-style';
+            style.innerHTML = `
+                @media print {
+                    .stats-grid, .section, .actions, .header { display: none !important; }
+                    body { padding: 0 !important; margin: 0 !important; }
+                }
+            `;
+            document.head.appendChild(style);
+
+            window.print();
+
+            document.head.removeChild(style);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAN BURGER | Écran Client</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/png" href="logo.png">
+    <style>
+        :root {
+            --primary: #FFD200;
+            --primary-dark: #E5BC00;
+            --bg: #0a0a0a;
+            --bg-card: #151515;
+            --text: #ffffff;
+            --text-secondary: #888;
+            --success: #10B981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .display-header {
+            padding: 30px 40px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #000;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand-logo {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-size: 42px;
+            font-weight: 800;
+        }
+
+        .brand h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 36px;
+            font-weight: 800;
+        }
+
+        .brand p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .order-mode {
+            font-size: 28px;
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 16px 32px;
+            border-radius: 16px;
+        }
+
+        /* Main Content */
+        .display-content {
+            flex: 1;
+            display: flex;
+            padding: 40px;
+            gap: 40px;
+            overflow: hidden;
+        }
+
+        /* Order Items */
+        .order-section {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: var(--text-secondary);
+        }
+
+        .order-items {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .order-item {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 24px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border-left: 4px solid var(--primary);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .item-icon {
+            font-size: 48px;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .item-details {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .item-qty {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            background: rgba(255, 107, 0, 0.15);
+            padding: 12px 24px;
+            border-radius: 12px;
+        }
+
+        .item-price {
+            font-size: 28px;
+            font-weight: 700;
+            min-width: 120px;
+            text-align: right;
+        }
+
+        /* Empty State */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .icon {
+            font-size: 120px;
+            margin-bottom: 24px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .empty-state span {
+            font-size: 18px;
+            margin-top: 8px;
+        }
+
+        /* Total Section */
+        .total-section {
+            flex: 1;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 40px;
+        }
+
+        .total-label {
+            font-size: 24px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .total-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 72px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 32px;
+        }
+
+        .total-items {
+            font-size: 20px;
+            color: var(--text-secondary);
+        }
+
+        /* Promo Banner */
+        .promo-banner {
+            padding: 20px 40px;
+            background: linear-gradient(90deg, #1a1a1a, #252525, #1a1a1a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            font-size: 18px;
+        }
+
+        .promo-banner span {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .promo-banner .tag {
+            background: var(--primary);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 14px;
+            color: #000;
+        }
+
+        /* Validation Animation */
+        .validation-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .validation-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .validation-content {
+            text-align: center;
+            animation: scaleIn 0.5s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .validation-icon {
+            font-size: 150px;
+            margin-bottom: 30px;
+        }
+
+        .validation-text {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: 16px;
+        }
+
+        .validation-number {
+            font-family: 'Syne', sans-serif;
+            font-size: 100px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="display-header">
+        <div class="brand">
+            <img src="logo.png" alt="NanBurger Logo" class="brand-logo">
+            <div>
+                <h1>NAN BURGER</h1>
+                <p>Burgers • Tacos • Tex-Mex | 100% Halal</p>
+            </div>
+        </div>
+        <div class="order-mode" id="orderMode">🍽️ Sur place</div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="display-content">
+        <div class="order-section">
+            <h2 class="section-title">Votre commande</h2>
+            <div class="order-items" id="orderItems">
+                <div class="empty-state" id="emptyState">
+                    <span class="icon">🍔</span>
+                    <p>Bienvenue chez NAN BURGER</p>
+                    <span>Votre commande s'affichera ici</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="total-section">
+            <span class="total-label">TOTAL À PAYER</span>
+            <span class="total-value" id="totalValue">0.00 €</span>
+            <span class="total-items" id="totalItems">0 article</span>
+        </div>
+    </main>
+
+    <!-- Promo Banner -->
+    <footer class="promo-banner">
+        <span><span class="tag">🔥 PROMO</span> -20% sur votre 1ère commande web avec BIENVENUE20</span>
+        <span>📱 Commandez sur nanburger.fr</span>
+        <span>⭐ 100% Halal Certifié</span>
+    </footer>
+
+    <!-- Validation Overlay -->
+    <div class="validation-overlay" id="validationOverlay">
+        <div class="validation-content">
+            <div class="validation-icon">✅</div>
+            <div class="validation-text">COMMANDE VALIDÉE</div>
+            <div class="validation-number" id="validationNumber">#001</div>
+        </div>
+    </div>
+
+    <script>
+        const DOM = {
+            orderMode: document.getElementById('orderMode'),
+            orderItems: document.getElementById('orderItems'),
+            emptyState: document.getElementById('emptyState'),
+            totalValue: document.getElementById('totalValue'),
+            totalItems: document.getElementById('totalItems'),
+            validationOverlay: document.getElementById('validationOverlay'),
+            validationNumber: document.getElementById('validationNumber')
+        };
+
+        let lastOrderData = null;
+
+        // Listen for updates from POS
+        if (window.BroadcastChannel) {
+            const channel = new BroadcastChannel('nanburger_pos');
+            channel.onmessage = (event) => {
+                if (event.data.type === 'order_update') {
+                    updateDisplay(event.data);
+                }
+                if (event.data.type === 'order_validated') {
+                    showValidation(event.data.orderNumber);
+                }
+            };
+        }
+
+        // Also poll localStorage for compatibility
+        setInterval(() => {
+            const stored = localStorage.getItem('nanburger_current_order');
+            if (stored) {
+                const data = JSON.parse(stored);
+                if (!lastOrderData || data.timestamp !== lastOrderData.timestamp) {
+                    lastOrderData = data;
+                    updateDisplay(data);
+                }
+            }
+        }, 500);
+
+        function updateDisplay(data) {
+            const items = data.items || [];
+            const total = parseFloat(data.total) || 0;
+            const mode = data.mode || 'surplace';
+
+            // Update mode
+            DOM.orderMode.innerHTML = mode === 'surplace' ? '🍽️ Sur place' : '🥡 À emporter';
+
+            // Update items
+            if (!items || items.length === 0) {
+                DOM.emptyState.style.display = 'flex';
+                DOM.orderItems.innerHTML = '';
+                DOM.orderItems.appendChild(DOM.emptyState);
+                DOM.totalValue.textContent = '0.00 €';
+                DOM.totalItems.textContent = '0 article';
+                return;
+            }
+
+            DOM.emptyState.style.display = 'none';
+
+            DOM.orderItems.innerHTML = items.map(item => {
+                const optStr = Object.values(item.options || {}).filter(v => v).join(', ');
+                const itemPrice = parseFloat(item.price) || 0;
+                const itemQty = parseInt(item.qty) || 1;
+                return `
+                    <div class="order-item">
+                        <span class="item-icon">${item.icon || '🍔'}</span>
+                        <div class="item-info">
+                            <div class="item-name">${item.name || 'Article'}</div>
+                            <div class="item-details">${item.format === 'menu' ? 'Menu' : 'Seul'}${optStr ? ' • ' + optStr : ''}</div>
+                        </div>
+                        <span class="item-qty">x${itemQty}</span>
+                        <span class="item-price">${(itemPrice * itemQty).toFixed(2)} €</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Update total
+            const itemCount = items.reduce((sum, i) => sum + (parseInt(i.qty) || 1), 0);
+            DOM.totalValue.textContent = total.toFixed(2) + ' €';
+            DOM.totalItems.textContent = itemCount + ' article' + (itemCount > 1 ? 's' : '');
+        }
+
+        function showValidation(orderNumber) {
+            DOM.validationNumber.textContent = orderNumber;
+            DOM.validationOverlay.classList.add('active');
+
+            setTimeout(() => {
+                DOM.validationOverlay.classList.remove('active');
+            }, 4000);
+        }
+
+        // Initial state
+        updateDisplay({ items: [], total: 0, mode: 'surplace' });
+    </script>
+</body>
+
+</html>

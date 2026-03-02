@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAN BURGER | Caisse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="caisse.css">
+    <link rel="icon" type="image/png" href="logo.png">
+</head>
+
+<body>
+    <!-- PIN Lock Screen -->
+    <div class="pin-lock" id="pinLock">
+        <div class="pin-content">
+            <img src="logo.png" alt="NanBurger Logo" class="pin-logo">
+            <h1>NAN BURGER</h1>
+            <p>Caisse - Accès sécurisé</p>
+            <div class="pin-display" id="pinDisplay">
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+            </div>
+            <div class="pin-error" id="pinError"></div>
+            <div class="pin-pad">
+                <button class="pin-btn" data-num="1">1</button>
+                <button class="pin-btn" data-num="2">2</button>
+                <button class="pin-btn" data-num="3">3</button>
+                <button class="pin-btn" data-num="4">4</button>
+                <button class="pin-btn" data-num="5">5</button>
+                <button class="pin-btn" data-num="6">6</button>
+                <button class="pin-btn" data-num="7">7</button>
+                <button class="pin-btn" data-num="8">8</button>
+                <button class="pin-btn" data-num="9">9</button>
+                <button class="pin-btn pin-clear" data-action="clear">C</button>
+                <button class="pin-btn" data-num="0">0</button>
+                <button class="pin-btn pin-back" data-action="back">←</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="pos-container" id="posContainer" style="display: none;">
+        <!-- LEFT: Product Selection -->
+        <div class="pos-left">
+            <!-- Header with mode toggle -->
+            <div class="pos-header">
+                <div class="pos-brand" id="posBrand" style="cursor: pointer;">
+                    <img src="logo.png" alt="NanBurger Logo" class="pos-logo">
+                    <span>NAN BURGER</span>
+                </div>
+                <div class="order-mode-toggle">
+                    <button class="mode-btn active" data-mode="surplace">🍽️ Sur place</button>
+                    <button class="mode-btn" data-mode="emporter">🥡 À emporter</button>
+                </div>
+                <div class="pos-status">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Connexion...</span>
+                </div>
+                <!-- Shortcut to daily report (hidden by default) -->
+                <a href="/rapport.html" target="_blank" id="rapportLink"
+                    style="display:none; margin-left:auto; text-decoration:none; color:var(--text); padding:8px 12px; background:var(--bg); border-radius:6px; border:1px solid var(--border); font-size:14px; font-weight:600;">📊
+                    Rapport</a>
+            </div>
+
+            <!-- Category tabs -->
+            <div class="pos-categories" id="posCategories">
+                <button class="cat-tab active" data-cat="burgers">🍔 Burgers</button>
+                <button class="cat-tab" data-cat="naans">🫓 Naan</button>
+                <button class="cat-tab" data-cat="tacos">🌯 Tacos</button>
+                <button class="cat-tab" data-cat="sandwichs">🥙 Sandwichs</button>
+                <button class="cat-tab" data-cat="paninis">🥪 Paninis</button>
+                <button class="cat-tab" data-cat="buckets">🍗 Buckets</button>
+                <button class="cat-tab" data-cat="texmex">🥟 Tex-Mex</button>
+                <button class="cat-tab" data-cat="assiettes">🍛 Assiettes</button>
+                <button class="cat-tab" data-cat="bowls">🥗 Bowls</button>
+                <button class="cat-tab" data-cat="sides">🍟 Extras</button>
+                <button class="cat-tab" data-cat="boissons">🥤 Boissons</button>
+                <button class="cat-tab" data-cat="supplements">➕ Suppl.</button>
+            </div>
+
+            <!-- Products grid -->
+            <div class="pos-products" id="posProducts">
+                <!-- Products will be rendered here -->
+            </div>
+        </div>
+
+        <!-- RIGHT: Current Order + Web Orders -->
+        <div class="pos-right">
+            <!-- Tabs: Current Order / Web Orders -->
+            <div class="right-tabs">
+                <button class="right-tab active" data-tab="current">📝 Commande en cours</button>
+                <button class="right-tab" data-tab="web">
+                    🌐 Commandes Web
+                    <span class="web-badge" id="webBadge">0</span>
+                </button>
+            </div>
+
+            <!-- Current Order Panel -->
+            <div class="right-panel active" id="currentPanel">
+                <div class="current-order" id="currentOrder">
+                    <div class="order-empty" id="orderEmpty">
+                        <span>🛒</span>
+                        <p>Aucun article</p>
+                    </div>
+                    <div class="order-items" id="orderItems"></div>
+                </div>
+                <div class="order-footer">
+                    <div class="order-total">
+                        <span>TOTAL</span>
+                        <span id="orderTotal">0.00 €</span>
+                    </div>
+                    <div class="order-actions">
+                        <button class="action-btn cancel" id="cancelOrder">🗑️ Annuler</button>
+                        <button class="action-btn print" id="printOrder">🖨️ Ticket</button>
+                        <button class="action-btn validate" id="validateOrder">✅ Valider</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Web Orders Panel -->
+            <div class="right-panel" id="webPanel">
+                <div class="web-orders" id="webOrders">
+                    <div class="order-empty">
+                        <span>📭</span>
+                        <p>Aucune commande web</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal" id="paymentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💰 Mode de paiement</h2>
+                <button class="modal-close" id="paymentClose">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 24px; color: var(--text-secondary); font-size: 16px;" id="paymentMessage">Sélectionnez le mode de paiement</p>
+                <div class="payment-buttons">
+                    <button class="payment-btn card" onclick="submitOrderWithPayment('Carte Bancaire')">
+                        <span class="icon">💳</span>
+                        Carte Bancaire
+                    </button>
+                    <button class="payment-btn cash" onclick="submitOrderWithPayment('Espèces')">
+                        <span class="icon">💶</span>
+                        Espèces
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Options Modal -->
+    <div class="options-modal" id="optionsModal">
+        <div class="options-content">
+            <div class="options-header">
+                <h3 id="optionsTitle">Options</h3>
+                <button class="options-close" id="optionsClose">×</button>
+            </div>
+            <div class="options-body" id="optionsBody"></div>
+            <div class="options-footer">
+                <div class="options-format">
+                    <button class="format-btn active" data-format="menu">Menu</button>
+                    <button class="format-btn" data-format="seul">Seul</button>
+                </div>
+                <div class="options-qty">
+                    <button class="qty-btn" id="optQtyMinus">−</button>
+                    <span id="optQtyValue">1</span>
+                    <button class="qty-btn" id="optQtyPlus">+</button>
+                </div>
+                <button class="options-add" id="optionsAdd">Ajouter <span id="optPrice">0.00 €</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Area (hidden) -->
+    <div id="printArea" class="print-area"></div>
+
+    <!-- PIN Authentication Script -->
+    <script>
+        // CODE PIN PAR DÉFAUT: 1234 (à changer!)
+        const CORRECT_PIN = '1234';
+        let enteredPin = '';
+
+        const pinLock = document.getElementById('pinLock');
+        const posContainer = document.getElementById('posContainer');
+        const pinDisplay = document.getElementById('pinDisplay');
+        const pinError = document.getElementById('pinError');
+        const dots = pinDisplay.querySelectorAll('.pin-dot');
+
+        // Check if already authenticated (session)
+        if (sessionStorage.getItem('pos_authenticated') === 'true') {
+            pinLock.style.display = 'none';
+            posContainer.style.display = 'grid';
+        }
+
+        // PIN pad click handler
+        document.querySelector('.pin-pad').addEventListener('click', (e) => {
+            const btn = e.target.closest('.pin-btn');
+            if (!btn) return;
+
+            const num = btn.dataset.num;
+            const action = btn.dataset.action;
+
+            if (action === 'clear') {
+                enteredPin = '';
+                updateDots();
+                pinError.textContent = '';
+            } else if (action === 'back') {
+                enteredPin = enteredPin.slice(0, -1);
+                updateDots();
+                pinError.textContent = '';
+            } else if (num !== undefined && enteredPin.length < 4) {
+                enteredPin += num;
+                updateDots();
+
+                if (enteredPin.length === 4) {
+                    validatePin();
+                }
+            }
+        });
+
+        function updateDots() {
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('filled', i < enteredPin.length);
+            });
+        }
+
+        function validatePin() {
+            if (enteredPin === CORRECT_PIN) {
+                pinLock.classList.add('success');
+                sessionStorage.setItem('pos_authenticated', 'true');
+                setTimeout(() => {
+                    pinLock.style.display = 'none';
+                    posContainer.style.display = 'grid';
+                }, 500);
+            } else {
+                pinError.textContent = 'Code incorrect';
+                pinLock.classList.add('shake');
+                setTimeout(() => {
+                    pinLock.classList.remove('shake');
+                    enteredPin = '';
+                    updateDots();
+                }, 500);
+            }
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (pinLock.style.display === 'none') return;
+
+            if (e.key >= '0' && e.key <= '9' && enteredPin.length < 4) {
+                enteredPin += e.key;
+                updateDots();
+                if (enteredPin.length === 4) validatePin();
+            } else if (e.key === 'Backspace') {
+                enteredPin = enteredPin.slice(0, -1);
+                updateDots();
+            } else if (e.key === 'Escape') {
+                enteredPin = '';
+                updateDots();
+            }
+        });
+
+        // Secret access to Rapport - 5 clicks on logo
+        let logoClickCount = 0;
+        let logoClickTimer = null;
+
+        document.getElementById('posBrand').addEventListener('click', () => {
+            logoClickCount++;
+
+            // Reset after 2 seconds of no clicks
+            clearTimeout(logoClickTimer);
+            logoClickTimer = setTimeout(() => {
+                logoClickCount = 0;
+            }, 2000);
+
+            // Show rapport link after 5 clicks
+            if (logoClickCount >= 5) {
+                const rapportLink = document.getElementById('rapportLink');
+                if (rapportLink.style.display === 'none') {
+                    rapportLink.style.display = 'block';
+                } else {
+                    rapportLink.style.display = 'none';
+                }
+                logoClickCount = 0;
+            }
+        });
+    </script>
+
+    <script src="caisse.js"></script>
+</body>
+
+</html>
