@@ -21,7 +21,8 @@ try {
             total DECIMAL(10,2) NOT NULL,
             status VARCHAR(20) DEFAULT 'pending',
             order_type VARCHAR(20) DEFAULT 'web',
-            payment_method VARCHAR(50) DEFAULT NULL,
+            payment_method VARCHAR(255) DEFAULT NULL,
+            payments JSON DEFAULT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             INDEX idx_status (status),
@@ -29,6 +30,15 @@ try {
             INDEX idx_order_type (order_type)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
+
+    // Migration : ajouter la colonne payments si pas présente (pour bases existantes)
+    try {
+        $pdo->exec("ALTER TABLE orders ADD COLUMN payments JSON DEFAULT NULL AFTER payment_method");
+    } catch (PDOException $e) { /* colonne déjà présente */ }
+    // Migration : élargir payment_method pour supporter le texte "Mixte (...)"
+    try {
+        $pdo->exec("ALTER TABLE orders MODIFY COLUMN payment_method VARCHAR(255) DEFAULT NULL");
+    } catch (PDOException $e) { /* ignore */ }
 
     // Création de la table pour les événements SSE (polling fallback)
     $pdo->exec("

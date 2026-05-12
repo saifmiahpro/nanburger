@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="caisse.css?v=5">
+    <link rel="stylesheet" href="caisse.css?v=10">
     <link rel="icon" type="image/png" href="logo.png">
 </head>
 
@@ -90,17 +90,23 @@
 
         <!-- RIGHT: Current Order + Web Orders -->
         <div class="pos-right">
-            <!-- Tabs: Current Order / Web Orders -->
+            <!-- Tabs: Current Order / Web Orders / All -->
             <div class="right-tabs">
-                <button class="right-tab active" data-tab="current">📝 Commande en cours</button>
+                <button class="right-tab active" data-tab="current">📝 En cours</button>
                 <button class="right-tab" data-tab="web">
-                    🌐 Commandes Web
+                    🌐 Web
                     <span class="web-badge" id="webBadge">0</span>
                 </button>
+                <button class="right-tab" data-tab="all">📋 Toutes</button>
             </div>
 
             <!-- Current Order Panel -->
             <div class="right-panel active" id="currentPanel">
+                <!-- Banner mode édition (caché par défaut) -->
+                <div class="edit-banner" id="editBanner" style="display:none;">
+                    <span>✏️ Édition <strong id="editOrderNum"></strong></span>
+                    <button id="exitEditBtn">✕ Annuler l'édition</button>
+                </div>
                 <div class="current-order" id="currentOrder">
                     <div class="order-empty" id="orderEmpty">
                         <span>🛒</span>
@@ -130,28 +136,102 @@
                     </div>
                 </div>
             </div>
+
+            <!-- All Today Orders Panel -->
+            <div class="right-panel" id="allPanel">
+                <div class="all-orders-header">
+                    <input type="text" id="allOrdersSearch" placeholder="🔍 Rechercher (N°, nom...)" />
+                    <button class="all-refresh" id="allOrdersRefresh" title="Rafraîchir">🔄</button>
+                </div>
+                <div class="all-orders" id="allOrders">
+                    <div class="order-empty">
+                        <span>📋</span>
+                        <p>Aucune commande aujourd'hui</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Payment Modal -->
+    <!-- Payment Modal : vue SIMPLE par défaut + vue MIXTE en option -->
     <div class="modal" id="paymentModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>💰 Mode de paiement</h2>
-                <button class="modal-close" id="paymentClose">×</button>
-            </div>
-            <div class="modal-body">
-                <p style="margin-bottom: 24px; color: var(--text-secondary); font-size: 16px;" id="paymentMessage">Sélectionnez le mode de paiement</p>
-                <div class="payment-buttons">
-                    <button class="payment-btn card" onclick="submitOrderWithPayment('Carte Bancaire')">
-                        <span class="icon">💳</span>
-                        Carte Bancaire
-                    </button>
-                    <button class="payment-btn cash" onclick="submitOrderWithPayment('Espèces')">
-                        <span class="icon">💶</span>
-                        Espèces
+        <div class="modal-content payment-modal-content">
+            <!-- ===== VUE SIMPLE (par défaut) ===== -->
+            <div class="payment-simple" id="paymentSimple">
+                <div class="modal-header">
+                    <h2>💰 Mode de paiement</h2>
+                    <button class="modal-close" id="paymentClose">×</button>
+                </div>
+                <div class="modal-body">
+                    <p class="payment-simple-total" id="payTotalSimple">Total : 0.00 €</p>
+                    <div class="payment-buttons">
+                        <button class="payment-btn card" id="paySimpleCard">
+                            <span class="icon">💳</span>
+                            Carte Bancaire
+                        </button>
+                        <button class="payment-btn cash" id="paySimpleCash">
+                            <span class="icon">💶</span>
+                            Espèces
+                        </button>
+                    </div>
+                    <button class="payment-mixed-link" id="paymentShowMixed">
+                        <span>🔀</span> Paiement mixte (plusieurs moyens)
                     </button>
                 </div>
+            </div>
+
+            <!-- ===== VUE MIXTE (avancée) ===== -->
+            <div class="payment-mixed" id="paymentMixed" style="display:none;">
+                <div class="payment-top">
+                    <button class="payment-back-btn" id="paymentShowSimple">← Retour</button>
+                    <div class="payment-top-info">
+                        <div class="payment-top-label">Total</div>
+                        <div class="payment-top-total" id="payTotal">0.00 €</div>
+                    </div>
+                    <div class="payment-top-info payment-top-remaining" id="payRemainingRow">
+                        <div class="payment-top-label">Reste</div>
+                        <div class="payment-top-remaining-val" id="payRemaining">0.00 €</div>
+                    </div>
+                </div>
+
+                <div class="payment-body">
+                    <!-- Colonne gauche : 3 modes -->
+                    <div class="payment-modes">
+                        <button class="payment-mode active" data-mode="card">
+                            <span class="payment-mode-icon">💳</span>
+                            <span class="payment-mode-label">Carte</span>
+                            <span class="payment-mode-amount" id="modeCardAmount">0.00 €</span>
+                        </button>
+                        <button class="payment-mode" data-mode="cash">
+                            <span class="payment-mode-icon">💶</span>
+                            <span class="payment-mode-label">Espèces</span>
+                            <span class="payment-mode-amount" id="modeCashAmount">0.00 €</span>
+                        </button>
+                        <button class="payment-mode" data-mode="tr">
+                            <span class="payment-mode-icon">🎫</span>
+                            <span class="payment-mode-label">Ticket Resto</span>
+                            <span class="payment-mode-amount" id="modeTRAmount">0.00 €</span>
+                        </button>
+                    </div>
+
+                    <!-- Colonne droite : pavé numérique -->
+                    <div class="payment-numpad">
+                        <button class="num-btn" data-digit="1">1</button>
+                        <button class="num-btn" data-digit="2">2</button>
+                        <button class="num-btn" data-digit="3">3</button>
+                        <button class="num-btn" data-digit="4">4</button>
+                        <button class="num-btn" data-digit="5">5</button>
+                        <button class="num-btn" data-digit="6">6</button>
+                        <button class="num-btn" data-digit="7">7</button>
+                        <button class="num-btn" data-digit="8">8</button>
+                        <button class="num-btn" data-digit="9">9</button>
+                        <button class="num-btn num-clear" data-action="clear">C</button>
+                        <button class="num-btn" data-digit="0">0</button>
+                        <button class="num-btn num-back" data-action="back">←</button>
+                    </div>
+                </div>
+
+                <button class="payment-validate" id="payValidate" disabled>VALIDER LE PAIEMENT</button>
             </div>
         </div>
     </div>
@@ -294,7 +374,7 @@
         });
     </script>
 
-    <script src="caisse.js?v=9"></script>
+    <script src="caisse.js?v=13"></script>
 </body>
 
 </html>

@@ -9,7 +9,6 @@ const PORT = process.env.PORT || 3000;
 // === BASE DE DONNÉES SQLite ===
 const db = new Database('nanburger.db');
 
-// Créer la table des commandes
 db.exec(`
     CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,248 +18,295 @@ db.exec(`
         items TEXT,
         total REAL,
         status TEXT DEFAULT 'pending',
+        order_type TEXT DEFAULT 'web',
         payment_method TEXT DEFAULT 'Non spécifié',
+        payments TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 `);
 
-// Migration for existing databases
-try {
-    db.exec(`ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT 'Non spécifié'`);
-} catch (e) {
-    // Column likely already exists, ignore
-}
+db.exec(`
+    CREATE TABLE IF NOT EXISTS sse_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_type TEXT NOT NULL,
+        data TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+`);
+
+// Migrations pour bases existantes (ignorer si colonne déjà présente)
+const migrations = {
+    payment_method: `ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT 'Non spécifié'`,
+    order_type: `ALTER TABLE orders ADD COLUMN order_type TEXT DEFAULT 'web'`,
+    payments: `ALTER TABLE orders ADD COLUMN payments TEXT`
+};
+Object.entries(migrations).forEach(([col, sql]) => {
+    try { db.exec(sql); } catch (e) { /* déjà présent */ }
+});
 
 // === MIDDLEWARE ===
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '/')));
 
-// Route pour le dashboard admin
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
-});
+// Routes courtes pour ouvrir les pages
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
+app.get('/caisse', (req, res) => res.sendFile(path.join(__dirname, 'caisse.html')));
+app.get('/display', (req, res) => res.sendFile(path.join(__dirname, 'display.html')));
+app.get('/rapport', (req, res) => res.sendFile(path.join(__dirname, 'rapport.html')));
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() }));
 
-// Route pour la caisse (POS)
-app.get('/caisse', (req, res) => {
-    res.sendFile(path.join(__dirname, 'caisse.html'));
-});
-
-// Route pour l'écran client
-app.get('/display', (req, res) => {
-    res.sendFile(path.join(__dirname, 'display.html'));
-});
-
-// Route pour le rapport journalier
-app.get('/rapport', (req, res) => {
-    res.sendFile(path.join(__dirname, 'rapport.html'));
-});
-
-// Health check endpoint for deployment verification
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// === CLIENTS SSE (Server-Sent Events) ===
-let sseClients = [];
-
-function sendToAllClients(data) {
-    sseClients.forEach(client => {
-        client.res.write(`data: ${JSON.stringify(data)}\n\n`);
-    });
-}
-
-// === ROUTES API ===
-
-// Générer un numéro de commande unique (ex: NB-001, NB-002...)
+// === HELPERS ===
 function generateOrderNumber() {
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const result = db.prepare(`
         SELECT COUNT(*) as count FROM orders
-        WHERE date(created_at) = date('now')
+        WHERE date(created_at) = date('now', 'localtime')
     `).get();
     const num = (result.count + 1).toString().padStart(3, '0');
-    return `NB-${today}-${num}`;
+    return `NB-${num}`;
 }
 
-// POST /api/orders - Créer une nouvelle commande
-app.post('/api/orders', (req, res) => {
-    try {
-        const { customer_name, customer_phone, items, total, payment_method } = req.body;
+function createSSEEvent(type, data) {
+    db.prepare('INSERT INTO sse_events (event_type, data) VALUES (?, ?)')
+        .run(type, JSON.stringify(data));
+}
 
-        if (!items || items.length === 0) {
-            return res.status(400).json({ error: 'Panier vide' });
+function parseOrder(o) {
+    if (!o) return o;
+    let payments = null;
+    if (o.payments) {
+        try { payments = JSON.parse(o.payments); } catch (e) { payments = null; }
+    }
+    return {
+        ...o,
+        items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
+        total: Number(o.total),
+        payments
+    };
+}
+
+// ============================================================
+// ROUTES PHP-COMPATIBLES (utilisées par le frontend en prod)
+// ============================================================
+
+// GET /api/orders.php?id=X | ?status=X | ?date=YYYY-MM-DD | (toutes)
+app.get('/api/orders.php', (req, res) => {
+    try {
+        const { id, status, date } = req.query;
+
+        if (id) {
+            const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+            if (!order) return res.status(404).json({ error: 'Order not found' });
+            return res.json(parseOrder(order));
+        }
+
+        if (status) {
+            const orders = db.prepare('SELECT * FROM orders WHERE status = ? ORDER BY created_at DESC').all(status);
+            return res.json(orders.map(parseOrder));
+        }
+
+        if (date) {
+            const orders = db.prepare(`
+                SELECT * FROM orders
+                WHERE date(created_at, 'localtime') = ?
+                ORDER BY created_at DESC
+            `).all(date);
+            return res.json(orders.map(parseOrder));
+        }
+
+        const orders = db.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT 100').all();
+        res.json(orders.map(parseOrder));
+    } catch (e) {
+        console.error('GET /api/orders.php', e);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// POST /api/orders.php
+app.post('/api/orders.php', (req, res) => {
+    try {
+        const {
+            customer_name = 'Client',
+            customer_phone = '',
+            items,
+            total = 0,
+            status = 'pending',
+            order_type = 'web',
+            payment_method = null,
+            payments = null
+        } = req.body || {};
+
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ error: 'Items requis' });
         }
 
         const order_number = generateOrderNumber();
-        const payment = payment_method || 'Non spécifié';
 
-        const stmt = db.prepare(`
-            INSERT INTO orders (order_number, customer_name, customer_phone, items, total, status, payment_method)
-            VALUES (?, ?, ?, ?, ?, 'pending', ?)
-        `);
-
-        const result = stmt.run(
-            order_number,
-            customer_name || 'Client',
-            customer_phone || '',
-            JSON.stringify(items),
-            total,
-            payment
-        );
-
-        const newOrder = {
-            id: result.lastInsertRowid,
+        const info = db.prepare(`
+            INSERT INTO orders (order_number, customer_name, customer_phone, items, total, status, order_type, payment_method, payments)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
             order_number,
             customer_name,
             customer_phone,
-            items,
+            JSON.stringify(items),
             total,
-            status: 'pending',
-            payment_method: payment,
-            created_at: new Date().toISOString()
-        };
+            status,
+            order_type,
+            payment_method || 'Non spécifié',
+            payments ? JSON.stringify(payments) : null
+        );
 
-        // Notifier tous les clients SSE (dashboard cuisine)
-        sendToAllClients({ type: 'new_order', order: newOrder });
+        const order = parseOrder(db.prepare('SELECT * FROM orders WHERE id = ?').get(info.lastInsertRowid));
 
-        res.status(201).json({
-            success: true,
-            order_number,
-            message: 'Commande enregistrée!'
-        });
+        // Notification SSE seulement pour les commandes web (comme en prod PHP)
+        if (order_type === 'web') {
+            createSSEEvent('new_order', {
+                id: order.id,
+                order_number: order.order_number,
+                customer_name: order.customer_name,
+                total: order.total
+            });
+        }
 
-    } catch (error) {
-        console.error('Erreur création commande:', error);
+        res.status(201).json({ success: true, order, order_number });
+    } catch (e) {
+        console.error('POST /api/orders.php', e);
         res.status(500).json({ error: 'Erreur serveur' });
     }
 });
 
-// GET /api/orders - Liste des commandes du jour
-app.get('/api/orders', (req, res) => {
+// PUT /api/orders.php?id=X
+app.put('/api/orders.php', (req, res) => {
     try {
-        const orders = db.prepare(`
-            SELECT * FROM orders
-            WHERE date(created_at) = date('now')
-            ORDER BY created_at DESC
-        `).all();
+        const { id } = req.query;
+        if (!id) return res.status(400).json({ error: 'ID requis' });
 
-        // Parser les items JSON
-        const parsed = orders.map(o => ({
-            ...o,
-            items: JSON.parse(o.items)
+        const existing = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+        if (!existing) return res.status(404).json({ error: 'Order not found' });
+
+        const data = req.body || {};
+        const updates = [];
+        const params = [];
+
+        ['status', 'payment_method', 'customer_name', 'customer_phone'].forEach(f => {
+            if (data[f] !== undefined) {
+                updates.push(`${f} = ?`);
+                params.push(data[f]);
+            }
+        });
+        if (data.items !== undefined) {
+            updates.push('items = ?');
+            params.push(JSON.stringify(data.items));
+        }
+        if (data.total !== undefined) {
+            updates.push('total = ?');
+            params.push(Number(data.total));
+        }
+        if (data.payments !== undefined) {
+            updates.push('payments = ?');
+            params.push(data.payments ? JSON.stringify(data.payments) : null);
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({ error: 'No data to update' });
+        }
+
+        params.push(id);
+        db.prepare(`UPDATE orders SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+
+        const order = parseOrder(db.prepare('SELECT * FROM orders WHERE id = ?').get(id));
+
+        if (data.status) {
+            createSSEEvent('order_updated', { id: Number(id), status: data.status });
+        }
+
+        res.json({ success: true, order });
+    } catch (e) {
+        console.error('PUT /api/orders.php', e);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// DELETE /api/orders.php?id=X
+app.delete('/api/orders.php', (req, res) => {
+    try {
+        const { id } = req.query;
+        if (!id) return res.status(400).json({ error: 'ID requis' });
+
+        const info = db.prepare('DELETE FROM orders WHERE id = ?').run(id);
+        if (info.changes === 0) return res.status(404).json({ error: 'Order not found' });
+
+        createSSEEvent('order_deleted', { id: Number(id) });
+        res.json({ success: true, message: 'Order deleted' });
+    } catch (e) {
+        console.error('DELETE /api/orders.php', e);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// GET /api/events.php?poll=1&since=X
+app.get('/api/events.php', (req, res) => {
+    try {
+        const since = parseInt(req.query.since || '0', 10);
+        const events = db.prepare(`
+            SELECT * FROM sse_events
+            WHERE id > ?
+            ORDER BY id ASC
+            LIMIT 50
+        `).all(since);
+
+        const formatted = events.map(e => ({
+            id: e.id,
+            type: e.event_type,
+            data: JSON.parse(e.data),
+            time: e.created_at
         }));
 
-        res.json(parsed);
-    } catch (error) {
-        console.error('Erreur liste commandes:', error);
+        const lastId = events.length > 0 ? events[events.length - 1].id : since;
+
+        res.json({
+            events: formatted,
+            lastId,
+            timestamp: Math.floor(Date.now() / 1000)
+        });
+    } catch (e) {
+        console.error('GET /api/events.php', e);
         res.status(500).json({ error: 'Erreur serveur' });
     }
 });
 
-// PATCH /api/orders/:id - Mettre à jour le statut
-app.patch('/api/orders/:id', (req, res) => {
-    try {
-        const { id } = req.params;
-        const { status, payment_method } = req.body;
+// Health PHP-compatible
+app.get('/api/health.php', (req, res) => {
+    res.json({ status: 'ok', mode: 'node-local', timestamp: new Date().toISOString() });
+});
 
-        if (status) {
-            const validStatuses = ['pending', 'preparing', 'ready', 'done'];
-            if (!validStatuses.includes(status)) {
-                return res.status(400).json({ error: 'Statut invalide' });
-            }
-            db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, id);
+// === FICHIERS STATIQUES (APRÈS les routes API pour éviter de servir les .php en clair) ===
+app.use(express.static(path.join(__dirname, '/'), {
+    // Ne pas servir le dossier api/ comme fichiers statiques
+    setHeaders: (res, filePath) => {
+        if (filePath.includes('/api/')) {
+            res.status(404);
         }
-
-        if (payment_method) {
-            db.prepare('UPDATE orders SET payment_method = ? WHERE id = ?').run(payment_method, id);
-        }
-
-        const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
-
-        if (order) {
-            order.items = JSON.parse(order.items);
-            sendToAllClients({ type: 'order_updated', order });
-        }
-
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Erreur mise à jour:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
     }
-});
+}));
 
-// DELETE /api/orders/:id - Supprimer une commande
-app.delete('/api/orders/:id', (req, res) => {
-    try {
-        const { id } = req.params;
-        db.prepare('DELETE FROM orders WHERE id = ?').run(id);
-        sendToAllClients({ type: 'order_deleted', id: parseInt(id) });
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Erreur suppression:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
-    }
-});
-
-// GET /api/orders/stream - SSE pour temps réel
-app.get('/api/orders/stream', (req, res) => {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-
-    // Envoyer un ping initial
-    res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
-
-    // Ajouter ce client à la liste
-    const clientId = Date.now();
-    sseClients.push({ id: clientId, res });
-
-    console.log(`Client SSE connecté: ${clientId} (Total: ${sseClients.length})`);
-
-    // Nettoyer quand le client se déconnecte
-    req.on('close', () => {
-        sseClients = sseClients.filter(c => c.id !== clientId);
-        console.log(`Client SSE déconnecté: ${clientId} (Total: ${sseClients.length})`);
-    });
-});
-
-// GET /api/stats - Stats du jour
-app.get('/api/stats', (req, res) => {
-    try {
-        const stats = db.prepare(`
-            SELECT
-                COUNT(*) as total_orders,
-                SUM(total) as total_revenue,
-                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN status = 'preparing' THEN 1 ELSE 0 END) as preparing,
-                SUM(CASE WHEN status = 'ready' THEN 1 ELSE 0 END) as ready,
-                SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done
-            FROM orders
-            WHERE date(created_at) = date('now')
-        `).get();
-
-        res.json(stats);
-    } catch (error) {
-        console.error('Erreur stats:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
-    }
+// Bloquer explicitement l'accès aux fichiers PHP en clair
+app.get('/api/*', (req, res) => {
+    res.status(404).json({ error: 'Endpoint not found' });
 });
 
 // === DÉMARRAGE SERVEUR ===
 app.listen(PORT, () => {
     console.log(`
     ╔═══════════════════════════════════════════════════════╗
-    ║                                                       ║
-    ║   🍔 NAN BURGER - Serveur démarré!                    ║
+    ║   🍔 NAN BURGER - Serveur LOCAL démarré!              ║
     ║                                                       ║
     ║   📱 Site client:    http://localhost:${PORT}            ║
-    ║   🍳 Dashboard:      http://localhost:${PORT}/admin       ║
-    ║   💰 Caisse (POS):   http://localhost:${PORT}/caisse      ║
-    ║   📺 Écran client:   http://localhost:${PORT}/display     ║
-    ║   📊 Rapport/Compta: http://localhost:${PORT}/rapport     ║
+    ║   💰 Caisse (POS):   http://localhost:${PORT}/caisse.html ║
+    ║   📊 Rapport:        http://localhost:${PORT}/rapport.html║
     ║                                                       ║
+    ║   ✅ Routes PHP-compatibles activées                  ║
+    ║      (mirror du backend Hostinger prod)               ║
     ╚═══════════════════════════════════════════════════════╝
     `);
 });

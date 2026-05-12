@@ -94,7 +94,7 @@ const menuData = {
     bowls: {
         title: 'Bowls', icon: '🥗',
         items: [
-            { id: 'bowl', name: 'Bowl', icon: '🥗', menu: 10.00, seul: 10.00, options: ['Viande', 'Sauce'] },
+            { id: 'bowl', name: 'Bowl', icon: '🥗', menu: 9.90, seul: 9.90, options: ['Viande', 'Sauce'] },
             { id: 'crousty-tenders', name: 'Crousty Tenders', icon: '🥗', menu: 10.00, seul: 10.00 },
             { id: 'crousty-curry', name: 'Crousty Curry', icon: '🥗', menu: 10.00, seul: 10.00 },
             { id: 'crousty-tikka', name: 'Crousty Tikka', icon: '🥗', menu: 10.00, seul: 10.00 },
@@ -156,6 +156,8 @@ const optionChoices = {
 // State
 let currentOrder = [];
 let webOrders = [];
+let allTodayOrders = [];
+let allOrdersSearchTerm = '';
 let orderMode = 'surplace'; // 'surplace' or 'emporter'
 let orderCounter = 1;
 let selectedProduct = null;
@@ -163,6 +165,11 @@ let selectedFormat = 'menu';
 let selectedQty = 1;
 let selectedOptions = {};
 let eventSource = null;
+
+// Mode édition d'une commande existante
+let editingOrderId = null;        // ID de la commande en cours d'édition (null = nouvelle commande)
+let editingOrderNumber = null;    // N° pour affichage dans le banner
+let editingOriginalOrder = null;  // Sauvegarde pour annulation
 
 // DOM Elements
 const DOM = {
@@ -175,14 +182,34 @@ const DOM = {
     webPanel: document.getElementById('webPanel'),
     webOrders: document.getElementById('webOrders'),
     webBadge: document.getElementById('webBadge'),
+    allOrders: document.getElementById('allOrders'),
+    allOrdersSearch: document.getElementById('allOrdersSearch'),
+    allOrdersRefresh: document.getElementById('allOrdersRefresh'),
     optionsModal: document.getElementById('optionsModal'),
     optionsTitle: document.getElementById('optionsTitle'),
     optionsBody: document.getElementById('optionsBody'),
     optQtyValue: document.getElementById('optQtyValue'),
     optPrice: document.getElementById('optPrice'),
+    editBanner: document.getElementById('editBanner'),
+    editOrderNum: document.getElementById('editOrderNum'),
+    exitEditBtn: document.getElementById('exitEditBtn'),
+    validateBtn: document.getElementById('validateOrder'),
     paymentModal: document.getElementById('paymentModal'),
     paymentClose: document.getElementById('paymentClose'),
-    paymentMessage: document.getElementById('paymentMessage'),
+    paymentSimple: document.getElementById('paymentSimple'),
+    paymentMixed: document.getElementById('paymentMixed'),
+    payTotalSimple: document.getElementById('payTotalSimple'),
+    paySimpleCard: document.getElementById('paySimpleCard'),
+    paySimpleCash: document.getElementById('paySimpleCash'),
+    paymentShowMixed: document.getElementById('paymentShowMixed'),
+    paymentShowSimple: document.getElementById('paymentShowSimple'),
+    payTotal: document.getElementById('payTotal'),
+    payRemaining: document.getElementById('payRemaining'),
+    payRemainingRow: document.getElementById('payRemainingRow'),
+    payValidate: document.getElementById('payValidate'),
+    modeCardAmount: document.getElementById('modeCardAmount'),
+    modeCashAmount: document.getElementById('modeCashAmount'),
+    modeTRAmount: document.getElementById('modeTRAmount'),
     printArea: document.getElementById('printArea'),
     statusDot: document.getElementById('statusDot'),
     statusText: document.getElementById('statusText')
@@ -226,13 +253,34 @@ function setupEvents() {
             document.querySelectorAll('.right-panel').forEach(p => p.classList.remove('active'));
             tab.classList.add('active');
             document.getElementById(tab.dataset.tab + 'Panel').classList.add('active');
+
+            // Charger l'historique du jour quand on ouvre l'onglet "Toutes"
+            if (tab.dataset.tab === 'all') {
+                loadAllTodayOrders();
+            }
         });
     });
+
+    // Recherche dans l'historique du jour
+    if (DOM.allOrdersSearch) {
+        DOM.allOrdersSearch.addEventListener('input', (e) => {
+            allOrdersSearchTerm = e.target.value.toLowerCase().trim();
+            renderAllTodayOrders();
+        });
+    }
+    if (DOM.allOrdersRefresh) {
+        DOM.allOrdersRefresh.addEventListener('click', loadAllTodayOrders);
+    }
 
     // Order actions
     document.getElementById('cancelOrder').addEventListener('click', cancelOrder);
     document.getElementById('printOrder').addEventListener('click', () => printCurrentOrder());
     document.getElementById('validateOrder').addEventListener('click', validateOrder);
+
+    // Sortir du mode édition
+    if (DOM.exitEditBtn) {
+        DOM.exitEditBtn.addEventListener('click', exitEditMode);
+    }
 
     // Options modal
     document.getElementById('optionsClose').addEventListener('click', closeOptionsModal);
@@ -245,6 +293,35 @@ function setupEvents() {
     DOM.paymentModal.addEventListener('click', (e) => {
         if (e.target === DOM.paymentModal) closePaymentModal();
     });
+
+    // Vue SIMPLE : boutons Carte / Espèces (un clic = encaissement direct)
+    DOM.paySimpleCard.addEventListener('click', () => payAllAs('Carte Bancaire'));
+    DOM.paySimpleCash.addEventListener('click', () => payAllAs('Espèces'));
+
+    // Basculer entre vue simple ↔ mixte
+    DOM.paymentShowMixed.addEventListener('click', showPaymentMixed);
+    DOM.paymentShowSimple.addEventListener('click', showPaymentSimple);
+
+    // Vue MIXTE : sélection du mode actif (Carte / Espèces / TR)
+    document.querySelectorAll('.payment-mode').forEach(btn => {
+        btn.addEventListener('click', () => {
+            setActivePaymentMode(btn.dataset.mode);
+        });
+    });
+
+    // Vue MIXTE : pavé numérique
+    document.querySelectorAll('.num-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const digit = btn.dataset.digit;
+            const action = btn.dataset.action;
+            if (digit !== undefined) numpadDigit(digit);
+            else if (action === 'clear') numpadClear();
+            else if (action === 'back') numpadBack();
+        });
+    });
+
+    // Validation finale (vue mixte)
+    DOM.payValidate.addEventListener('click', confirmPayment);
 
     document.querySelectorAll('.format-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -343,6 +420,12 @@ function selectProduct(item, category) {
     document.querySelector('.format-btn[data-format="menu"]').classList.add('active');
     DOM.optQtyValue.textContent = '1';
 
+    // Cacher le sélecteur Menu/Seul si les deux prix sont identiques
+    const formatRow = document.querySelector('.options-format');
+    if (formatRow) {
+        formatRow.style.display = (item.menu === item.seul) ? 'none' : '';
+    }
+
     updateOptionPrice();
     DOM.optionsModal.classList.add('active');
 }
@@ -363,6 +446,8 @@ function addProductToOrder() {
     if (!selectedProduct) return;
 
     const price = selectedFormat === 'menu' ? selectedProduct.menu : selectedProduct.seul;
+    // Pas de format à afficher quand Menu = Seul (Bowls, Buckets, Suppl., etc.)
+    const hasFormat = selectedProduct.menu !== selectedProduct.seul;
 
     const orderItem = {
         id: Date.now(),
@@ -372,6 +457,7 @@ function addProductToOrder() {
         price: price,
         qty: selectedQty,
         format: selectedFormat,
+        hasFormat: hasFormat,
         options: { ...selectedOptions }
     };
 
@@ -398,7 +484,7 @@ function renderCurrentOrder() {
                 <span class="item-icon">${item.icon}</span>
                 <div class="item-info">
                     <div class="item-name">${item.name}</div>
-                    <div class="item-details">${item.format === 'menu' ? 'Menu' : 'Seul'}${optStr ? ' • ' + optStr : ''}</div>
+                    <div class="item-details">${(item.hasFormat !== false) ? (item.format === 'menu' ? 'Menu' : 'Seul') : ''}${(item.hasFormat !== false && optStr) ? ' • ' : ''}${optStr}</div>
                 </div>
                 <div class="item-qty">
                     <button onclick="updateItemQty(${item.id}, -1)">−</button>
@@ -428,6 +514,13 @@ function updateItemQty(itemId, delta) {
 }
 
 function cancelOrder() {
+    // En mode édition, c'est équivalent à sortir du mode édition
+    if (editingOrderId) {
+        if (confirm('Abandonner les modifications en cours ?')) {
+            exitEditMode();
+        }
+        return;
+    }
     if (currentOrder.length === 0) return;
     if (confirm('Annuler la commande en cours ?')) {
         currentOrder = [];
@@ -436,9 +529,22 @@ function cancelOrder() {
     }
 }
 
+let pendingCallback = null;
+let pendingOrderId = null;
+let paymentTotal = 0;
+// Montants en CENTIMES (entiers) pour éviter les erreurs flottantes
+let paymentCents = { card: 0, cash: 0, tr: 0 };
+let activePaymentMode = 'card';
+
 async function validateOrder() {
     if (currentOrder.length === 0) {
         alert('Aucun article dans la commande');
+        return;
+    }
+
+    // Mode édition : sauvegarder les modifs (PUT) sans repasser par le paiement
+    if (editingOrderId) {
+        await saveEditedOrder();
         return;
     }
 
@@ -446,12 +552,137 @@ async function validateOrder() {
     pendingCallback = null;
     pendingOrderId = null;
 
-    DOM.paymentMessage.textContent = `Total à régler : ${total.toFixed(2)} €`;
+    openPaymentModal(total, `Total à régler : ${total.toFixed(2)} €`);
+}
+
+// ===== MODE ÉDITION =====
+function startEditOrder(orderId) {
+    // Trouver la commande dans nos listes locales
+    const order = allTodayOrders.find(o => o.id === orderId)
+        || webOrders.find(o => o.id === orderId);
+    if (!order) {
+        alert('Commande introuvable');
+        return;
+    }
+
+    // Si on a déjà des items dans une nouvelle commande, demander confirmation
+    if (!editingOrderId && currentOrder.length > 0) {
+        if (!confirm('La commande en cours sera perdue. Continuer ?')) return;
+    }
+
+    // Activer mode édition
+    editingOrderId = order.id;
+    editingOrderNumber = order.order_number || ('#' + order.id);
+    editingOriginalOrder = JSON.parse(JSON.stringify(order));
+
+    // Charger les items dans currentOrder (avec des IDs uniques pour le rendu)
+    currentOrder = (order.items || []).map((item, idx) => ({
+        ...item,
+        id: Date.now() + idx, // ID unique pour la ligne de panier
+        productId: item.productId || item.id,
+        // Garantir les flags
+        format: item.format || 'menu',
+        hasFormat: item.hasFormat !== false,
+        options: item.options || {}
+    }));
+
+    // Switch sur l'onglet "En cours"
+    document.querySelectorAll('.right-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.right-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('.right-tab[data-tab="current"]').classList.add('active');
+    document.getElementById('currentPanel').classList.add('active');
+
+    // Afficher le banner
+    DOM.editBanner.style.display = 'flex';
+    DOM.editOrderNum.textContent = editingOrderNumber;
+
+    // Changer le label du bouton valider
+    DOM.validateBtn.textContent = '💾 Enregistrer';
+
+    renderCurrentOrder();
+}
+
+function exitEditMode() {
+    editingOrderId = null;
+    editingOrderNumber = null;
+    editingOriginalOrder = null;
+    currentOrder = [];
+    DOM.editBanner.style.display = 'none';
+    DOM.validateBtn.textContent = '✅ Valider';
+    renderCurrentOrder();
+}
+
+async function saveEditedOrder() {
+    if (!editingOrderId) return;
+
+    const newTotal = currentOrder.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+    try {
+        const res = await fetch(`${API_URL}/api/orders.php?id=${editingOrderId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                items: currentOrder,
+                total: newTotal
+            })
+        });
+        if (!res.ok) throw new Error('Erreur serveur');
+    } catch (e) {
+        console.error('Error saving edit:', e);
+        alert('Erreur lors de l\'enregistrement. Réessayez.');
+        return;
+    }
+
+    const savedNum = editingOrderNumber;
+    exitEditMode();
+
+    // Rafraîchir les listes
+    loadWebOrders();
+    const allTabActive = document.querySelector('.right-tab[data-tab="all"]')?.classList.contains('active');
+    if (allTabActive) loadAllTodayOrders();
+
+    alert(`Commande ${savedNum} mise à jour ✓`);
+}
+
+function openPaymentModal(total, _msg) {
+    paymentTotal = Number(total) || 0;
+    paymentCents = { card: 0, cash: 0, tr: 0 };
+    activePaymentMode = 'card';
+
+    // Vue simple par défaut
+    showPaymentSimple();
+    DOM.payTotalSimple.textContent = `Total : ${paymentTotal.toFixed(2)} €`;
+
+    // Préparer aussi la vue mixte (cachée)
+    DOM.payTotal.textContent = paymentTotal.toFixed(2) + ' €';
+    refreshPaymentUI();
+    document.querySelectorAll('.payment-mode').forEach(m => {
+        m.classList.toggle('active', m.dataset.mode === 'card');
+    });
+
     DOM.paymentModal.classList.add('active');
 }
 
-let pendingCallback = null;
-let pendingOrderId = null;
+function showPaymentSimple() {
+    DOM.paymentSimple.style.display = '';
+    DOM.paymentMixed.style.display = 'none';
+}
+
+function showPaymentMixed() {
+    DOM.paymentSimple.style.display = 'none';
+    DOM.paymentMixed.style.display = '';
+    refreshPaymentUI();
+}
+
+// Encaissement simple : un seul mode (Carte ou Espèces), montant = total exact
+async function payAllAs(method) {
+    paymentCents = { card: 0, cash: 0, tr: 0 };
+    const totalCents = Math.round(paymentTotal * 100);
+    if (method === 'Carte Bancaire') paymentCents.card = totalCents;
+    else if (method === 'Espèces') paymentCents.cash = totalCents;
+    refreshPaymentUI();
+    await confirmPayment();
+}
 
 function closePaymentModal() {
     DOM.paymentModal.classList.remove('active');
@@ -459,10 +690,87 @@ function closePaymentModal() {
     pendingOrderId = null;
 }
 
-async function submitOrderWithPayment(paymentMethod) {
+function centsToEuros(c) {
+    return (c / 100);
+}
+
+function refreshPaymentUI() {
+    const card = centsToEuros(paymentCents.card);
+    const cash = centsToEuros(paymentCents.cash);
+    const tr = centsToEuros(paymentCents.tr);
+
+    DOM.modeCardAmount.textContent = card.toFixed(2) + ' €';
+    DOM.modeCashAmount.textContent = cash.toFixed(2) + ' €';
+    DOM.modeTRAmount.textContent = tr.toFixed(2) + ' €';
+
+    const entered = card + cash + tr;
+    const remaining = paymentTotal - entered;
+
+    DOM.payRemaining.textContent = remaining.toFixed(2) + ' €';
+    DOM.payRemainingRow.classList.remove('ok', 'over');
+
+    const tolerance = 0.005;
+    if (Math.abs(remaining) < tolerance) {
+        DOM.payRemainingRow.classList.add('ok');
+        DOM.payValidate.disabled = false;
+    } else if (remaining < -tolerance) {
+        DOM.payRemainingRow.classList.add('over');
+        DOM.payValidate.disabled = true;
+    } else {
+        DOM.payValidate.disabled = true;
+    }
+}
+
+function setActivePaymentMode(mode) {
+    activePaymentMode = mode;
+    document.querySelectorAll('.payment-mode').forEach(m => {
+        m.classList.toggle('active', m.dataset.mode === mode);
+    });
+}
+
+// Saisie style POS : chaque digit décale d'un cran à gauche
+function numpadDigit(d) {
+    const cur = paymentCents[activePaymentMode] || 0;
+    paymentCents[activePaymentMode] = cur * 10 + Number(d);
+    refreshPaymentUI();
+}
+
+function numpadBack() {
+    const cur = paymentCents[activePaymentMode] || 0;
+    paymentCents[activePaymentMode] = Math.floor(cur / 10);
+    refreshPaymentUI();
+}
+
+function numpadClear() {
+    paymentCents[activePaymentMode] = 0;
+    refreshPaymentUI();
+}
+
+function buildPaymentsArray() {
+    const card = centsToEuros(paymentCents.card);
+    const cash = centsToEuros(paymentCents.cash);
+    const tr = centsToEuros(paymentCents.tr);
+    const payments = [];
+    if (card > 0) payments.push({ method: 'Carte Bancaire', amount: Number(card.toFixed(2)) });
+    if (cash > 0) payments.push({ method: 'Espèces', amount: Number(cash.toFixed(2)) });
+    if (tr > 0) payments.push({ method: 'Ticket Resto', amount: Number(tr.toFixed(2)) });
+    return payments;
+}
+
+function formatPaymentMethod(payments) {
+    if (!payments || payments.length === 0) return 'Non spécifié';
+    if (payments.length === 1) return payments[0].method;
+    return 'Mixte (' + payments.map(p => `${p.method}: ${p.amount.toFixed(2)}€`).join(', ') + ')';
+}
+
+async function confirmPayment() {
+    const payments = buildPaymentsArray();
+    if (payments.length === 0) return;
+    const paymentMethod = formatPaymentMethod(payments);
+
     if (pendingCallback) {
-        // This is a web order completion
-        pendingCallback(paymentMethod);
+        // Cas : commande web qu'on encaisse, ou édition d'une commande
+        pendingCallback({ paymentMethod, payments });
         closePaymentModal();
         return;
     }
@@ -472,7 +780,6 @@ async function submitOrderWithPayment(paymentMethod) {
     const total = currentOrder.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const orderNumber = generateOrderNumber();
 
-    // Save order to database
     try {
         await fetch(`${API_URL}/api/orders.php`, {
             method: 'POST',
@@ -484,6 +791,7 @@ async function submitOrderWithPayment(paymentMethod) {
                 total: total,
                 order_type: orderMode,
                 payment_method: paymentMethod,
+                payments: payments,
                 status: 'done'
             })
         });
@@ -491,16 +799,18 @@ async function submitOrderWithPayment(paymentMethod) {
         console.error('Error saving order:', e);
     }
 
-    // Print ticket
-    printTicket(orderNumber, currentOrder, total, orderMode, paymentMethod);
+    printTicket(orderNumber, currentOrder, total, orderMode, paymentMethod, payments);
 
-    // Reset
     currentOrder = [];
     renderCurrentOrder();
     broadcastOrderUpdate();
     closePaymentModal();
 
-    // Increment counter
+    const allTabActive = document.querySelector('.right-tab[data-tab="all"]')?.classList.contains('active');
+    if (allTabActive) {
+        loadAllTodayOrders();
+    }
+
     orderCounter++;
     saveOrderCounter();
 }
@@ -528,8 +838,29 @@ function saveOrderCounter() {
     localStorage.setItem('nanburger_order_date', new Date().toDateString());
 }
 
+// Helper : rendu compact pour les listes (une ligne)
+function renderPaymentShort(payments, paymentMethod) {
+    if (Array.isArray(payments) && payments.length > 0) {
+        const icons = { 'Carte Bancaire': '💳', 'Espèces': '💶', 'Ticket Resto': '🎫' };
+        return payments.map(p => `${icons[p.method] || ''} ${Number(p.amount).toFixed(2)}€`).join(' + ');
+    }
+    return paymentMethod || '';
+}
+
+// Helper : rendu multi-ligne (tickets imprimés)
+function renderPaymentDetail(payments, paymentMethod) {
+    if (Array.isArray(payments) && payments.length > 0) {
+        if (payments.length === 1) {
+            const p = payments[0];
+            return `${p.method} : ${Number(p.amount).toFixed(2)} €`;
+        }
+        return 'PAIEMENT MIXTE<br>' + payments.map(p => `${p.method} : ${Number(p.amount).toFixed(2)} €`).join('<br>');
+    }
+    return paymentMethod || '';
+}
+
 // ===== PRINTING =====
-function printTicket(orderNum, items, total, mode, paymentMethod) {
+function printTicket(orderNum, items, total, mode, paymentMethod, payments) {
     const now = new Date();
     const time = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     const date = now.toLocaleDateString('fr-FR');
@@ -541,14 +872,14 @@ function printTicket(orderNum, items, total, mode, paymentMethod) {
 
     const itemsHtml = items.map(item => {
         const optStr = Object.values(item.options || {}).filter(v => v).join(', ');
+        const formatLabel = (item.hasFormat !== false) ? (item.format === 'menu' ? 'Menu' : 'Seul') : '';
+        const subline = formatLabel && optStr ? `${formatLabel} - ${optStr}` : (formatLabel || optStr);
         return `
             <tr>
                 <td style="text-align:left;">${item.qty}x ${item.name}</td>
                 <td style="text-align:right;">${(item.price * item.qty).toFixed(2)}€</td>
             </tr>
-            <tr>
-                <td colspan="2" style="font-size:10px;color:#555;padding-left:10px;">${item.format === 'menu' ? 'Menu' : 'Seul'}${optStr ? ' - ' + optStr : ''}</td>
-            </tr>
+            ${subline ? `<tr><td colspan="2" style="font-size:10px;color:#555;padding-left:10px;">${subline}</td></tr>` : ''}
         `;
     }).join('');
 
@@ -594,7 +925,6 @@ function printTicket(orderNum, items, total, mode, paymentMethod) {
         <div class="info">SIRET: 995 176 310 00010</div>
         <div style="margin-top:8px;font-size:16px">${date} - ${time}</div>
         <div class="mode">${mode === 'surplace' ? 'SUR PLACE' : 'A EMPORTER'}</div>
-        ${paymentMethod ? `<div class="mode">${paymentMethod}</div>` : ''}
     </div>
 
     <div class="order-num">${orderNum}</div>
@@ -605,6 +935,8 @@ function printTicket(orderNum, items, total, mode, paymentMethod) {
         <span>TOTAL</span>
         <span>${total.toFixed(2)} EUR</span>
     </div>
+
+    ${paymentMethod || (payments && payments.length) ? `<div style="margin-top:14px; padding:12px; border:2px solid black; text-align:center; font-size:18px;">${renderPaymentDetail(payments, paymentMethod)}</div>` : ''}
 
     <div class="tva">HT: ${totalHT.toFixed(2)} | TVA ${tvaRate}%: ${tvaAmount.toFixed(2)}</div>
 
@@ -695,7 +1027,9 @@ function renderWebOrders() {
                 </div>
                 <div class="web-order-actions">
                     <button class="btn-print" onclick="printWebOrder(${order.id})">🖨️ Imprimer</button>
+                    <button class="btn-edit" onclick="startEditOrder(${order.id})">✏️ Modifier</button>
                     <button class="btn-done" onclick="markWebOrderDone(${order.id})">✅ Terminée</button>
+                    <button class="btn-delete" onclick="deleteOrder(${order.id}, '${order.order_number}')">🗑️ Supprimer</button>
                 </div>
             </div>
         `;
@@ -713,12 +1047,14 @@ async function printWebOrder(orderId) {
 
     const itemsHtml = order.items.map(item => {
         const optStr = Object.values(item.options || {}).filter(v => v).join(', ');
+        const formatLabel = (item.hasFormat !== false) ? (item.format === 'menu' ? 'Menu' : 'Seul') : '';
+        const subline = formatLabel && optStr ? `${formatLabel} - ${optStr}` : (formatLabel || optStr);
         return `
             <tr>
                 <td>${item.qty}x ${item.name}</td>
                 <td style="text-align:right">${(item.price * item.qty).toFixed(2)}€</td>
             </tr>
-            ${optStr ? `<tr><td colspan="2" style="font-size:11px;padding-left:8px">${item.format === 'menu' ? 'Menu' : 'Seul'} - ${optStr}</td></tr>` : ''}
+            ${subline ? `<tr><td colspan="2" style="font-size:11px;padding-left:8px">${subline}</td></tr>` : ''}
         `;
     }).join('');
 
@@ -811,23 +1147,140 @@ async function markWebOrderDone(orderId) {
     if (!order) return;
 
     pendingOrderId = orderId;
-    DOM.paymentMessage.textContent = `Commande Web #${order.order_number} - Total : ${order.total.toFixed(2)} €`;
 
-    pendingCallback = async (paymentMethod) => {
+    pendingCallback = async ({ paymentMethod, payments }) => {
         try {
             await fetch(`${API_URL}/api/orders.php?id=${orderId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'done', payment_method: paymentMethod })
+                body: JSON.stringify({
+                    status: 'done',
+                    payment_method: paymentMethod,
+                    payments: payments
+                })
             });
             webOrders = webOrders.filter(o => o.id !== orderId);
             renderWebOrders();
+            // Rafraîchir l'historique si visible
+            const allTabActive = document.querySelector('.right-tab[data-tab="all"]')?.classList.contains('active');
+            if (allTabActive) loadAllTodayOrders();
         } catch (e) {
             console.error('Error:', e);
         }
     };
 
-    DOM.paymentModal.classList.add('active');
+    openPaymentModal(order.total, `Web ${order.order_number} - Total : ${Number(order.total).toFixed(2)} €`);
+}
+
+// ===== TOUTES LES COMMANDES DU JOUR =====
+async function loadAllTodayOrders() {
+    try {
+        // Date locale (Europe/Paris) au format YYYY-MM-DD, pas UTC
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const res = await fetch(`${API_URL}/api/orders.php?date=${today}`);
+        const orders = await res.json();
+        allTodayOrders = Array.isArray(orders) ? orders : [];
+        renderAllTodayOrders();
+    } catch (e) {
+        console.error('Error loading today orders:', e);
+    }
+}
+
+function renderAllTodayOrders() {
+    if (!DOM.allOrders) return;
+
+    let list = allTodayOrders;
+    if (allOrdersSearchTerm) {
+        list = list.filter(o => {
+            const num = (o.order_number || '').toLowerCase();
+            const name = (o.customer_name || '').toLowerCase();
+            const phone = (o.customer_phone || '').toLowerCase();
+            return num.includes(allOrdersSearchTerm)
+                || name.includes(allOrdersSearchTerm)
+                || phone.includes(allOrdersSearchTerm);
+        });
+    }
+
+    if (list.length === 0) {
+        DOM.allOrders.innerHTML = `
+            <div class="order-empty">
+                <span>📋</span>
+                <p>${allOrdersSearchTerm ? 'Aucun résultat' : 'Aucune commande aujourd\'hui'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    DOM.allOrders.innerHTML = list.map(order => {
+        const time = new Date(order.created_at).toLocaleTimeString('fr-FR', {
+            hour: '2-digit', minute: '2-digit'
+        });
+
+        const statusLabel = {
+            'pending': '⏳ En attente',
+            'preparing': '👨‍🍳 En prépa',
+            'ready': '✅ Prête',
+            'done': '✔️ Terminée'
+        }[order.status] || order.status;
+
+        const sourceLabel = (order.customer_name === 'Sur place' || order.customer_name === 'À emporter')
+            ? `🏪 ${order.customer_name}`
+            : `🌐 ${order.customer_name}`;
+
+        const itemsHtml = (order.items || []).map(item =>
+            `<div class="all-order-item">${item.qty}x ${item.name}</div>`
+        ).join('');
+
+        return `
+            <div class="all-order-card all-order-${order.status}" data-id="${order.id}">
+                <div class="all-order-header">
+                    <span class="all-order-num">${order.order_number || '#' + order.id}</span>
+                    <span class="all-order-time">${time}</span>
+                </div>
+                <div class="all-order-meta">
+                    <span class="all-order-source">${sourceLabel}</span>
+                    <span class="all-order-status">${statusLabel}</span>
+                </div>
+                ${order.customer_phone ? `<div class="all-order-phone">📞 ${order.customer_phone}</div>` : ''}
+                <div class="all-order-items">${itemsHtml}</div>
+                <div class="all-order-footer">
+                    <span class="all-order-total">${Number(order.total).toFixed(2)} €</span>
+                    <span class="all-order-payment">${renderPaymentShort(order.payments, order.payment_method)}</span>
+                </div>
+                <div class="all-order-actions">
+                    <button class="btn-edit" onclick="startEditOrder(${order.id})">✏️ Modifier</button>
+                    <button class="btn-delete" onclick="deleteOrder(${order.id}, '${(order.order_number || '').replace(/'/g, "\\'")}')">🗑️ Supprimer</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ===== DELETE ORDER (web ou caisse) =====
+async function deleteOrder(orderId, orderNumber) {
+    const label = orderNumber || `#${orderId}`;
+    if (!confirm(`Supprimer la commande ${label} ?\n\nCette action est définitive.`)) {
+        return;
+    }
+    try {
+        const res = await fetch(`${API_URL}/api/orders.php?id=${orderId}`, {
+            method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Erreur serveur');
+
+        // Retirer de la liste web orders si présent
+        webOrders = webOrders.filter(o => o.id !== orderId);
+        renderWebOrders();
+
+        // Recharger l'historique du jour si visible
+        if (typeof loadAllTodayOrders === 'function') {
+            loadAllTodayOrders();
+        }
+    } catch (e) {
+        console.error('Error deleting order:', e);
+        alert('Erreur lors de la suppression. Réessayez.');
+    }
 }
 
 // ===== POLLING CONNECTION (PHP Compatible) =====
@@ -850,6 +1303,7 @@ async function pollForUpdates() {
         const data = await res.json();
 
         if (data.events && data.events.length > 0) {
+            const allTabActive = document.querySelector('.right-tab[data-tab="all"]')?.classList.contains('active');
             data.events.forEach(event => {
                 if (event.type === 'new_order') {
                     // Reload web orders when new order arrives
@@ -860,6 +1314,10 @@ async function pollForUpdates() {
                     loadWebOrders();
                 }
             });
+            // Rafraîchir l'historique du jour si visible
+            if (allTabActive) {
+                loadAllTodayOrders();
+            }
             lastEventId = data.lastId;
         }
 
@@ -917,4 +1375,5 @@ function broadcastOrderUpdate() {
 window.updateItemQty = updateItemQty;
 window.printWebOrder = printWebOrder;
 window.markWebOrderDone = markWebOrderDone;
-window.submitOrderWithPayment = submitOrderWithPayment;
+window.deleteOrder = deleteOrder;
+window.startEditOrder = startEditOrder;

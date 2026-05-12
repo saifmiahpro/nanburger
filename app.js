@@ -99,7 +99,7 @@ const menuData = {
         title: 'Bowls',
         icon: '🥗',
         items: [
-            { id: 'bowl', name: 'Bowl', desc: 'Viande au choix • Frites • Sauce au choix', icon: '🥗', menu: 10.00, seul: 10.00, options: ['Viande', 'Sauce'] },
+            { id: 'bowl', name: 'Bowl', desc: 'Viande au choix • Frites • Sauce au choix', icon: '🥗', menu: 9.90, seul: 9.90, options: ['Viande', 'Sauce'] },
             { id: 'crousty-tenders', name: 'Crousty Tenders', desc: 'Riz basmati • Tenders • Sauce fromagère • Chili thaï', icon: '🥗', menu: 10.00, seul: 10.00 },
             { id: 'crousty-curry', name: 'Crousty Curry', desc: 'Riz basmati • Poulet Curry • Sauce fromagère • Chili thaï', icon: '🥗', menu: 10.00, seul: 10.00 },
             { id: 'crousty-tikka', name: 'Crousty Tikka', desc: 'Riz basmati • Poulet Tikka • Sauce fromagère • Chili thaï', icon: '🥗', menu: 10.00, seul: 10.00 },
@@ -410,6 +410,12 @@ function openProductSheet(item, cat) {
     document.querySelectorAll('.price-option').forEach(o => o.classList.remove('selected'));
     document.querySelector('.price-option[data-type="menu"]').classList.add('selected');
 
+    // Cacher le bloc Menu/Seul si les deux prix sont identiques
+    const pricesContainer = document.querySelector('.product-prices');
+    if (pricesContainer) {
+        pricesContainer.style.display = (item.menu === item.seul) ? 'none' : '';
+    }
+
     // Render options
     if (item.options && item.options.length > 0) {
         DOM.productOptions.innerHTML = item.options.map(opt => {
@@ -492,6 +498,7 @@ function addToCart() {
     if (!currentProduct) return;
 
     const price = currentFormat === 'menu' ? currentProduct.menu : currentProduct.seul;
+    const hasFormat = currentProduct.menu !== currentProduct.seul;
 
     const cartItem = {
         id: `${currentProduct.id}-${Date.now()}`,
@@ -501,6 +508,7 @@ function addToCart() {
         price: price,
         qty: currentQty,
         format: currentFormat,
+        hasFormat: hasFormat,
         options: { ...currentOptions }
     };
 
@@ -529,7 +537,7 @@ function renderCartItems() {
                 <div class="cart-item-icon">${item.icon}</div>
                 <div class="cart-item-info">
                     <div class="cart-item-name">${item.name}</div>
-                    <div class="cart-item-options">${item.format === 'menu' ? 'Menu' : 'Seul'}${optStr ? ' • ' + optStr : ''}</div>
+                    <div class="cart-item-options">${(item.hasFormat !== false) ? (item.format === 'menu' ? 'Menu' : 'Seul') : ''}${(item.hasFormat !== false && optStr) ? ' • ' : ''}${optStr}</div>
                     <div class="cart-item-bottom">
                         <div class="cart-item-price">${(item.price * item.qty).toFixed(2)} €</div>
                         <div class="cart-item-controls">

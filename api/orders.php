@@ -45,6 +45,7 @@ function handleGet($pdo) {
         if ($order) {
             $order['items'] = json_decode($order['items'], true);
             $order['total'] = floatval($order['total']);
+            $order['payments'] = !empty($order['payments']) ? json_decode($order['payments'], true) : null;
             jsonResponse($order);
         } else {
             jsonResponse(['error' => 'Order not found'], 404);
@@ -61,6 +62,7 @@ function handleGet($pdo) {
         foreach ($orders as &$order) {
             $order['items'] = json_decode($order['items'], true);
             $order['total'] = floatval($order['total']);
+            $order['payments'] = !empty($order['payments']) ? json_decode($order['payments'], true) : null;
         }
 
         jsonResponse($orders);
@@ -80,6 +82,7 @@ function handleGet($pdo) {
         foreach ($orders as &$order) {
             $order['items'] = json_decode($order['items'], true);
             $order['total'] = floatval($order['total']);
+            $order['payments'] = !empty($order['payments']) ? json_decode($order['payments'], true) : null;
         }
 
         jsonResponse($orders);
@@ -117,11 +120,14 @@ function handlePost($pdo) {
     $status = isset($data['status']) ? sanitize($data['status']) : 'pending';
     $orderType = isset($data['order_type']) ? sanitize($data['order_type']) : 'web';
     $paymentMethod = isset($data['payment_method']) ? sanitize($data['payment_method']) : null;
+    $payments = isset($data['payments']) && is_array($data['payments'])
+        ? json_encode($data['payments'], JSON_UNESCAPED_UNICODE)
+        : null;
 
     // Insertion
     $stmt = $pdo->prepare("
-        INSERT INTO orders (order_number, customer_name, customer_phone, items, total, status, order_type, payment_method)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO orders (order_number, customer_name, customer_phone, items, total, status, order_type, payment_method, payments)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
     $stmt->execute([
@@ -132,7 +138,8 @@ function handlePost($pdo) {
         $total,
         $status,
         $orderType,
-        $paymentMethod
+        $paymentMethod,
+        $payments
     ]);
 
     $orderId = $pdo->lastInsertId();
@@ -204,6 +211,12 @@ function handlePut($pdo) {
     if (isset($data['total'])) {
         $updates[] = "total = ?";
         $params[] = floatval($data['total']);
+    }
+    if (array_key_exists('payments', $data)) {
+        $updates[] = "payments = ?";
+        $params[] = is_array($data['payments'])
+            ? json_encode($data['payments'], JSON_UNESCAPED_UNICODE)
+            : null;
     }
 
     if (empty($updates)) {
